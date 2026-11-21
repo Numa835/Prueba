@@ -1,0 +1,1457 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Dashboard de monitoreo del proyecto</title>
+<style>
+:root{
+  --page:#f4f5f7; --surface:#fcfcfb; --ink:#0b0b0b; --ink2:#52514e; --muted:#6f6d68; --grid:#e1e0d9; --axis:#c3c2b7;
+  --navy:#0d366b; --navy2:#184f95; --blue:#2a78d6; --plan:#86b6ef; --real:#1c5cab; --orange:#eb6834; --aqua:#1baf7a;
+  --ok:#0ca30c; --warn:#fab219; --serious:#ec835a; --bad:#d03b3b; --none:#898781; --okText:#006300;
+  --ring:rgba(11,11,11,.10);
+  font-family:system-ui,-apple-system,"Segoe UI",sans-serif;
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--page);color:var(--ink)}
+body{font-size:14px;line-height:1.45}
+h1,h2,h3,h4{margin:0;font-weight:650}
+button,input,select,textarea{font:inherit;color:inherit}
+header.top{background:var(--navy);color:#fff;padding:18px 24px 0}
+.top .row{display:flex;gap:16px;align-items:flex-end;justify-content:space-between;flex-wrap:wrap}
+.top .eyebrow{font-size:12px;letter-spacing:.08em;text-transform:uppercase;opacity:.75}
+.top h1{font-size:22px;margin-top:2px}
+.top .sub{opacity:.85;font-size:13px;margin-top:2px}
+.clock{background:rgba(255,255,255,.1);border-radius:10px;padding:8px 14px;text-align:right}
+.clock b{font-size:20px}
+.clock span{display:block;font-size:12px;opacity:.85}
+nav.tabs{display:flex;gap:4px;margin-top:14px;overflow-x:auto}
+nav.tabs a{color:#cfe0f7;text-decoration:none;padding:10px 16px;border-radius:8px 8px 0 0;font-weight:550;white-space:nowrap;font-size:14px}
+nav.tabs a:hover{background:rgba(255,255,255,.08)}
+nav.tabs a.on{background:var(--page);color:var(--navy)}
+main{max-width:1280px;margin:0 auto;padding:20px 24px 48px}
+.banner{background:#fff6dc;border:1px solid #f0d78a;border-radius:10px;padding:10px 14px;margin-bottom:16px;display:flex;gap:12px;align-items:center;justify-content:space-between;flex-wrap:wrap;font-size:13px}
+.card{background:var(--surface);border:1px solid var(--ring);border-radius:12px;padding:16px 18px;margin-bottom:16px}
+.card h3{font-size:15px;margin-bottom:2px}
+.card .hint{color:var(--ink2);font-size:12.5px;margin-bottom:12px}
+.grid{display:grid;gap:16px}
+.g2{grid-template-columns:repeat(auto-fit,minmax(380px,1fr))}
+.g3{grid-template-columns:repeat(auto-fit,minmax(300px,1fr))}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px;margin-bottom:16px}
+.kpi{background:var(--surface);border:1px solid var(--ring);border-radius:12px;padding:14px 16px}
+.kpi .l{font-size:12px;color:var(--ink2);text-transform:uppercase;letter-spacing:.04em}
+.kpi .v{font-size:28px;font-weight:700;margin:4px 0 2px;letter-spacing:-.01em}
+.kpi .s{font-size:12.5px;color:var(--ink2)}
+.chip{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:600;padding:2px 9px 2px 7px;border-radius:99px;background:#f0efec;white-space:nowrap}
+.chip i{font-style:normal;font-size:11px}
+.ok i{color:var(--ok)}.warn i{color:#d9960a}.bad i{color:var(--bad)}.none i{color:var(--none)}.info i{color:var(--blue)}
+table{border-collapse:collapse;width:100%}
+th,td{padding:8px 10px;text-align:left;vertical-align:top;border-bottom:1px solid var(--grid);font-size:13px}
+th{font-size:11.5px;text-transform:uppercase;letter-spacing:.04em;color:var(--ink2);background:#f7f7f4;position:sticky;top:0;white-space:nowrap}
+td.n,th.n{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+.scroll{overflow-x:auto}
+.bar{height:10px;background:#ececE6;border-radius:5px;position:relative;overflow:hidden}
+.bar>b{position:absolute;left:0;top:0;bottom:0;border-radius:5px}
+.bar.t{height:14px}
+.pair{display:grid;grid-template-columns:150px 1fr 120px;gap:10px;align-items:center;padding:7px 0;border-bottom:1px solid var(--grid)}
+.pair:last-child{border:0}
+.pair .bars{display:grid;gap:3px}
+.pair .nums{font-size:12px;color:var(--ink2);text-align:right;font-variant-numeric:tabular-nums}
+.legend{display:flex;gap:16px;flex-wrap:wrap;font-size:12.5px;color:var(--ink2);margin:4px 0 10px}
+.legend span::before{content:"";display:inline-block;width:11px;height:11px;border-radius:3px;margin-right:6px;vertical-align:-1px;background:var(--c)}
+.legend span.ln::before{height:3px;vertical-align:3px}
+.alert{display:grid;grid-template-columns:auto 1fr;gap:10px;padding:9px 0;border-bottom:1px solid var(--grid)}
+.alert:last-child{border:0}
+.alert b{display:block;font-size:13px}
+.alert p{margin:1px 0 0;color:var(--ink2);font-size:12.5px}
+.alert a{color:var(--navy2);font-size:12.5px}
+.sev{width:22px;height:22px;display:grid;place-items:center;border-radius:6px;font-size:12px;font-weight:700;color:#fff}
+.sev.bad{background:var(--bad)}.sev.warn{background:var(--warn);color:#0b0b0b}.sev.info{background:var(--blue)}
+.lvl{font-size:11px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:#fff;background:var(--navy2);border-radius:5px;padding:2px 7px;white-space:nowrap}
+.field{display:grid;gap:3px;font-size:12px;color:var(--ink2)}
+.field input,.field select,.field textarea{border:1px solid var(--axis);border-radius:7px;padding:6px 8px;background:#fff;min-width:0;color:var(--ink);font-size:13px}
+.field input:focus,.field select:focus,.field textarea:focus,.btn:focus-visible{outline:2px solid var(--blue);outline-offset:1px}
+.form{display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end}
+.btn{border:1px solid var(--navy2);background:var(--navy2);color:#fff;border-radius:8px;padding:7px 14px;cursor:pointer;font-weight:600;font-size:13px}
+.btn:hover{background:var(--navy)}
+.btn.ghost{background:#fff;color:var(--navy2)}
+.btn.ghost:hover{background:#eef4fc}
+.btn.danger{background:#fff;border-color:var(--bad);color:var(--bad)}
+.btn.sm{padding:3px 9px;font-size:12px}
+td input.cell{width:64px;border:1px solid var(--axis);border-radius:6px;padding:3px 6px;text-align:right;background:#fff}
+.ind{border:1px solid var(--grid);border-radius:12px;padding:14px 16px;margin-bottom:14px;background:#fff}
+.ind .head{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:6px}
+.ind .meta{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px 16px;margin:10px 0;font-size:12.5px}
+.ind .meta dt{color:var(--ink2);font-size:11.5px;text-transform:uppercase;letter-spacing:.04em}
+.ind .meta dd{margin:0}
+.ind .two{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:18px}
+@media(max-width:820px){.ind .two{grid-template-columns:1fr}.pair{grid-template-columns:1fr}.pair .nums{text-align:left}main{padding:14px}}
+.gantt{min-width:1220px}
+.grow{display:grid;grid-template-columns:270px 150px 84px 150px 104px 1fr;align-items:stretch;border-bottom:1px solid var(--grid);min-height:34px}
+.grow.h{background:#f7f7f4;font-size:11.5px;text-transform:uppercase;letter-spacing:.04em;color:var(--ink2);position:sticky;top:0;z-index:3}
+.grow.grp{background:#eef2f8;font-weight:650}
+.grow>div{padding:6px 8px;display:flex;align-items:center;font-size:12.5px}
+.grow>div.months{display:grid;grid-template-columns:repeat(var(--m),1fr);position:relative;padding:0!important}
+.months .c{border-left:1px solid var(--grid);height:100%;min-height:34px;display:flex;align-items:center;justify-content:center;font-size:11px;color:var(--ink2)}
+.months .c.cut{background:#dce9fa}
+.grow.h .months .c{min-height:0;padding:6px 0}
+.gb{position:absolute;top:7px;height:20px;border-radius:5px;background:#cde2fb;border:1px solid #86b6ef;overflow:hidden;z-index:2;cursor:default}
+.gb>b{position:absolute;left:0;top:0;bottom:0;background:var(--real)}
+.gb.crit{border:2px solid var(--ink)}
+.cutline{position:absolute;top:0;bottom:0;width:2px;background:var(--bad);z-index:4;pointer-events:none}
+.code{font-weight:700;color:var(--navy2);margin-right:6px;font-variant-numeric:tabular-nums}
+.ellip{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#tip{position:fixed;z-index:50;pointer-events:none;background:#111;color:#fff;padding:7px 10px;border-radius:8px;font-size:12px;max-width:300px;display:none;box-shadow:0 4px 14px rgba(0,0,0,.25)}
+#tip b{display:block;margin-bottom:2px}
+#tip .r{display:flex;gap:8px;justify-content:space-between}
+#modal{position:fixed;inset:0;background:rgba(0,0,0,.45);display:none;place-items:center;z-index:60;padding:16px}
+#modal .box{background:#fff;border-radius:14px;max-width:720px;width:100%;padding:18px;max-height:90vh;overflow:auto}
+#modal textarea{width:100%;height:280px;font-family:ui-monospace,monospace;font-size:12px;border:1px solid var(--axis);border-radius:8px;padding:8px}
+svg text{font-family:inherit}
+.mini{font-size:12px;color:var(--ink2)}
+.sep{height:1px;background:var(--grid);margin:12px 0}
+.tag{font-size:11px;background:#fff1cf;border:1px solid #f0d78a;border-radius:5px;padding:1px 6px;margin-left:6px;font-weight:600}
+a{color:var(--navy2)}
+@media print{header nav,.banner,.btn{display:none!important}}
+html{scroll-behavior:smooth}
+.rise{animation:rise .6s cubic-bezier(.22,1,.36,1) both;animation-delay:var(--d,0ms)}
+.growx{transform-origin:left center;animation:growx .8s cubic-bezier(.22,1,.36,1) both;animation-delay:var(--d,0ms)}
+.wipe{animation:wipe 1s cubic-bezier(.22,1,.36,1) both;animation-delay:var(--d,0ms)}
+.pop{animation:pop .35s ease-out both}
+@keyframes rise{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
+@keyframes growx{from{transform:scaleX(0);opacity:.4}to{transform:none;opacity:1}}
+@keyframes growy{from{transform:scaleY(0)}to{transform:none}}
+@keyframes wipe{from{clip-path:inset(0 100% 0 0 round 6px)}to{clip-path:inset(0 0 0 0 round 6px)}}
+@keyframes pop{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+@keyframes dotin{from{opacity:0;transform:scale(.2)}to{opacity:1;transform:none}}
+.dotin{transform-box:fill-box;transform-origin:center;animation:dotin .45s cubic-bezier(.34,1.56,.64,1) both}
+.card,.kpi,.ind{transition:box-shadow .25s}
+.kpi:hover,.card:hover{box-shadow:0 6px 22px rgba(13,54,107,.09)}
+table tr:hover td{background:#f4f8fd}
+td,th{transition:background .15s}
+.pair{transition:background .15s;border-radius:8px;padding-left:6px;padding-right:6px}
+.pair:hover{background:#f4f8fd}
+.grow{transition:background .15s}.grow:not(.h):not(.grp):hover{background:#f4f8fd}
+.btn{transition:background .2s,transform .12s,box-shadow .2s}.btn:active{transform:scale(.97)}
+.chip{transition:background .2s}
+.bar>b,.gb>b{will-change:width}
+.hg .band{fill:#1c5cab;opacity:0;transition:opacity .15s}
+.hg:hover .band{opacity:.07}
+svg .mk{transition:opacity .2s}
+svg:has(.hg:hover) .hg:not(:hover) .mk{opacity:.4}
+th[data-sort]{cursor:pointer;user-select:none}
+th[data-sort]:hover{color:var(--navy2)}
+@media (prefers-reduced-motion:reduce){.rise,.growx,.wipe,.pop,.dotin,.mk{animation:none!important}html{scroll-behavior:auto}}
+
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="row">
+    <div>
+      <div class="eyebrow" id="eyebrow">Sistema de monitoreo · Marco lógico</div>
+      <h1 id="ttl"></h1>
+      <div class="sub" id="sub"></div>
+    </div>
+    <div class="clock" id="clock"></div>
+  </div>
+  <nav class="tabs" id="tabs"></nav>
+</header>
+<main id="main"></main>
+<div id="tip"></div>
+<div id="modal"><div class="box" id="mbox"></div></div>
+
+<script>
+const DATA={
+ "levels": [
+  {
+   "nivel": "Fin",
+   "narrativo": "Contribuir a reducir la exposición de los adolescentes escolarizados de la localidad Suroriente de Barranquilla al reclutamiento, la utilización y el uso por estructuras criminales.",
+   "indicador": "Al cierre del año lectivo 2028, la tasa de retiro intraanual de estudiantes de 6.º a 11.º de la IED seleccionada en la localidad Suroriente de Barranquilla se reduce al menos un 20% frente a la registrada en 2026.",
+   "tipo": "Impacto",
+   "formula": "(Estudiantes de 6.º a 11.º retirados durante el año ÷ Estudiantes de 6.º a 11.º matriculados al inicio del año) × 100",
+   "unidad": "%",
+   "base": "Por establecer: tasa de retiro 2026 de la IED (SIMAT)",
+   "meta": "20% (meta tentativa; se ajusta con la línea de base)",
+   "plazo": "Mes 22 (cierre del año lectivo 2028)",
+   "frecuencia": "Anual",
+   "fuente": "Reporte de matrícula y retiro del SIMAT, Secretaría de Educación Distrital; registro de retiros de la secretaría académica de la IED",
+   "viab": "2",
+   "costo": "0",
+   "resp": "Coordinación del proyecto, con la Secretaría de Educación Distrital",
+   "smart": 6
+  },
+  {
+   "nivel": "Propósito",
+   "narrativo": "Los estudiantes de 6.º a 11.º de la institución educativa distrital seleccionada, en la localidad Suroriente de Barranquilla, cuentan con una respuesta institucional oportuna y articulada ante sus necesidades de apoyo académico, emocional, familiar, de convivencia o de protección, que favorece su permanencia escolar.",
+   "indicador": "Al mes 10 del proyecto, al menos el 80 % de los estudiantes de 6.º a 11.º de la IED seleccionada con una necesidad de apoyo reconocida por la institución acceden efectivamente al apoyo requerido en un plazo máximo de 30 días.",
+   "tipo": "Resultado",
+   "formula": "(Estudiantes que acceden al apoyo en 30 días o menos ÷ Total de estudiantes con necesidad de apoyo reconocida en el periodo) × 100",
+   "unidad": "%",
+   "base": "Por establecer con los registros agregados de orientación escolar (2026)",
+   "meta": "80 % (meta tentativa; se ajusta con la línea de base)",
+   "plazo": "Mes 10",
+   "frecuencia": "Trimestral",
+   "fuente": "Registro agregado de casos de orientación escolar; actas del Comité Escolar de Convivencia; confirmación de atención de ICBF, Comisaría de Familia o servicio de salud",
+   "viab": "2",
+   "costo": "0",
+   "resp": "Orientador(a) escolar de la IED",
+   "smart": 6
+  },
+  {
+   "nivel": "Componente 1",
+   "narrativo": "Protocolo institucional de identificación, acompañamiento y remisión de necesidades de apoyo estudiantil implementado, con responsable de salvaguarda designado y rutas validadas con el ICBF y la Comisaría de Familia",
+   "indicador": "Al mes 4 del proyecto, la IED seleccionada cuenta con 1 protocolo de identificación, acompañamiento y remisión de necesidades de apoyo estudiantil, adoptado por el Consejo Directivo, con responsable de salvaguarda y suplente designados, y con rutas validadas con el ICBF y la Comisaría de Familia.",
+   "tipo": "Producto",
+   "formula": "Número de protocolos adoptados con los tres requisitos (adopción formal, salvaguarda designada y rutas validadas)",
+   "unidad": "Número",
+   "base": "0",
+   "meta": "1",
+   "plazo": "Mes 4",
+   "frecuencia": "Semestral",
+   "fuente": "Acta del Consejo Directivo de la IED; acta de designación del responsable de salvaguarda; actas de validación con ICBF y Comisaría de Familia",
+   "viab": "2",
+   "costo": "0",
+   "resp": "Rectoría de la IED y coordinación del proyecto",
+   "smart": 6
+  },
+  {
+   "nivel": "Componente 2",
+   "narrativo": "Estrategias de apoyo a los estudiantes, seleccionadas según las barreras identificadas en el diagnóstico, implementadas para fortalecer su vínculo escolar y su proyecto de vida.",
+   "indicador": "Al mes 9 del proyecto, al menos 150 estudiantes de 6.º a 11.º de la IED seleccionada (mínimo 45 % mujeres) completan al menos el 75 % de la estrategia de apoyo seleccionada según las barreras identificadas en el diagnóstico.",
+   "tipo": "Producto",
+   "formula": "Número de estudiantes que completan al menos el 75 % de la estrategia (desagregado por sexo y grado)",
+   "unidad": "Número",
+   "base": "0",
+   "meta": "150 (meta tentativa; se ajusta con la matrícula SIMAT y el diagnóstico)",
+   "plazo": "Mes 9",
+   "frecuencia": "Trimestral",
+   "fuente": "Listas de participación de la estrategia; informe de cierre del componente",
+   "viab": "3",
+   "costo": "0",
+   "resp": "Equipo del proyecto (gestor[a] psicosocial)",
+   "smart": 6
+  },
+  {
+   "nivel": "Componente 3",
+   "narrativo": "Capacidades de las familias y de la comunidad educativa fortalecidas para acompañar y proteger a los estudiantes, con enfoque de género y de masculinidades no violentas.",
+   "indicador": "Al mes 9 del proyecto, al menos 100 familias de estudiantes de 6.º a 11.º de la IED seleccionada completan al menos 6 de las 8 sesiones de la escuela de familias y mejoran su puntaje en la evaluación inicial y final de prácticas de acompañamiento y protección.",
+   "tipo": "Producto",
+   "formula": "Número de familias que completan 6 de 8 sesiones y obtienen un puntaje final mayor que el inicial",
+   "unidad": "Número",
+   "base": "0",
+   "meta": "100 (meta tentativa",
+   "plazo": "Mes 10",
+   "frecuencia": "Trimestral",
+   "fuente": "Listas de asistencia de la escuela de familias; formatos de evaluación inicial y final (pre y post) aplicados por el equipo",
+   "viab": "3",
+   "costo": "30",
+   "resp": "Equipo del proyecto (gestor[a] psicosocial) con orientación escolar",
+   "smart": 6
+  }
+ ],
+ "acts": [
+  {
+   "cod": "1.1",
+   "comp": "Componente 1",
+   "act": "Formalizar con la Secretaría de Educación Distrital y la rectoría el acuerdo de trabajo con la institución educativa seleccionada.",
+   "entregable": "Acuerdo de trabajo firmado",
+   "resp": "Coordinación del proyecto",
+   "ini": 1,
+   "dur": 1,
+   "dep": "",
+   "sheet_slack": 9,
+   "sheet_crit": ""
+  },
+  {
+   "cod": "1.2",
+   "comp": "Componente 1",
+   "act": "Establecer la línea de base de necesidades de apoyo atendidas y tiempos de respuesta, con registros agregados de orientación escolar y del SIMAT.",
+   "entregable": "Informe de línea de base",
+   "resp": "Coordinación del proyecto",
+   "ini": 2,
+   "dur": 1,
+   "dep": "1.1",
+   "sheet_slack": 8,
+   "sheet_crit": ""
+  },
+  {
+   "cod": "1.3",
+   "comp": "Componente 1",
+   "act": "Diseñar de forma participativa el protocolo de identificación, acompañamiento y remisión de necesidades de apoyo estudiantil.",
+   "entregable": "Documento del protocolo",
+   "resp": "Gestor(a) psicosocial",
+   "ini": 2,
+   "dur": 2,
+   "dep": "1.1",
+   "sheet_slack": 7,
+   "sheet_crit": ""
+  },
+  {
+   "cod": "1.4",
+   "comp": "Componente 1",
+   "act": "Validar las rutas de remisión del protocolo con el ICBF y la Comisaría de Familia.",
+   "entregable": "Actas de validación de rutas",
+   "resp": "Coordinación del proyecto",
+   "ini": 4,
+   "dur": 1,
+   "dep": "1.3",
+   "sheet_slack": 6,
+   "sheet_crit": ""
+  },
+  {
+   "cod": "1.5",
+   "comp": "Componente 1",
+   "act": "Designar el responsable de salvaguarda y su suplente, y acordar el manejo reservado de registros.",
+   "entregable": "Acta de designación",
+   "resp": "Rectoría de la IED",
+   "ini": 4,
+   "dur": 1,
+   "dep": "1.3",
+   "sheet_slack": 6,
+   "sheet_crit": ""
+  },
+  {
+   "cod": "1.6",
+   "comp": "Componente 1",
+   "act": "Formar a docentes y orientadores en la aplicación del protocolo y en el manejo de revelaciones de riesgo.",
+   "entregable": "Listas de asistencia y evaluación de la formación",
+   "resp": "Gestor(a) psicosocial",
+   "ini": 5,
+   "dur": 1,
+   "dep": "1.4",
+   "sheet_slack": 5,
+   "sheet_crit": ""
+  },
+  {
+   "cod": "1.7",
+   "comp": "Componente 1",
+   "act": "Adoptar el protocolo mediante acuerdo del Consejo Directivo e incorporarlo al manual de convivencia.",
+   "entregable": "Acta del Consejo Directivo",
+   "resp": "Rectoría de la IED",
+   "ini": 6,
+   "dur": 1,
+   "dep": "1.6",
+   "sheet_slack": 4,
+   "sheet_crit": ""
+  },
+  {
+   "cod": "1.8",
+   "comp": "Componente 1",
+   "act": "Hacer seguimiento trimestral a la aplicación del protocolo y a los tiempos de respuesta.",
+   "entregable": "Informes trimestrales de seguimiento",
+   "resp": "Orientador(a) escolar",
+   "ini": 7,
+   "dur": 4,
+   "dep": "1.7",
+   "sheet_slack": 0,
+   "sheet_crit": "CRÍTICA"
+  },
+  {
+   "cod": "2.1",
+   "comp": "Componente 2",
+   "act": "Identificar con docentes, orientación y familias las barreras de permanencia de los estudiantes de 6.º a 11.º.",
+   "entregable": "Informe de barreras de permanencia",
+   "resp": "Gestor(a) psicosocial",
+   "ini": 2,
+   "dur": 1,
+   "dep": "1.1",
+   "sheet_slack": 8,
+   "sheet_crit": ""
+  },
+  {
+   "cod": "2.2",
+   "comp": "Componente 2",
+   "act": "Comparar alternativas de apoyo frente a las barreras identificadas y seleccionar la estrategia pertinente.",
+   "entregable": "Matriz de alternativas y estrategia seleccionada",
+   "resp": "Coordinación del proyecto",
+   "ini": 3,
+   "dur": 1,
+   "dep": "2.1",
+   "sheet_slack": 7,
+   "sheet_crit": ""
+  },
+  {
+   "cod": "2.3",
+   "comp": "Componente 2",
+   "act": "Convocar a los estudiantes y obtener el consentimiento de madres, padres o acudientes y el asentimiento de los estudiantes.",
+   "entregable": "Formatos de consentimiento y asentimiento",
+   "resp": "Orientador(a) escolar",
+   "ini": 4,
+   "dur": 1,
+   "dep": "2.2",
+   "sheet_slack": 6,
+   "sheet_crit": ""
+  },
+  {
+   "cod": "2.4",
+   "comp": "Componente 2",
+   "act": "Implementar la estrategia de apoyo seleccionada con los grupos de estudiantes participantes.",
+   "entregable": "Listas de participación y registros de sesiones",
+   "resp": "Gestor(a) psicosocial",
+   "ini": 5,
+   "dur": 5,
+   "dep": "2.3",
+   "sheet_slack": 1,
+   "sheet_crit": ""
+  },
+  {
+   "cod": "2.5",
+   "comp": "Componente 2",
+   "act": "Gestionar con el SENA la vinculación de estudiantes de 15 a 17 años a oferta de formación.",
+   "entregable": "Listado de estudiantes vinculados",
+   "resp": "Coordinación del proyecto",
+   "ini": 6,
+   "dur": 3,
+   "dep": "2.2",
+   "sheet_slack": 2,
+   "sheet_crit": ""
+  },
+  {
+   "cod": "2.6",
+   "comp": "Componente 2",
+   "act": "Evaluar la participación y los resultados de la estrategia al cierre del componente.",
+   "entregable": "Informe de cierre del componente",
+   "resp": "Gestor(a) psicosocial",
+   "ini": 10,
+   "dur": 1,
+   "dep": "2.4",
+   "sheet_slack": 0,
+   "sheet_crit": "CRÍTICA"
+  },
+  {
+   "cod": "3.1",
+   "comp": "Componente 3",
+   "act": "Diseñar la escuela de familias de ocho sesiones con enfoque de género y de masculinidades no violentas.",
+   "entregable": "Guía metodológica de la escuela de familias",
+   "resp": "Gestor(a) psicosocial",
+   "ini": 2,
+   "dur": 1,
+   "dep": "1.1",
+   "sheet_slack": 8,
+   "sheet_crit": ""
+  },
+  {
+   "cod": "3.2",
+   "comp": "Componente 3",
+   "act": "Convocar a las familias de los estudiantes a través de la institución educativa.",
+   "entregable": "Listado de familias inscritas",
+   "resp": "Orientador(a) escolar",
+   "ini": 3,
+   "dur": 1,
+   "dep": "3.1",
+   "sheet_slack": 7,
+   "sheet_crit": ""
+  },
+  {
+   "cod": "3.3",
+   "comp": "Componente 3",
+   "act": "Aplicar la evaluación inicial de prácticas de acompañamiento y protección a las familias inscritas.",
+   "entregable": "Evaluaciones iniciales aplicadas",
+   "resp": "Gestor(a) psicosocial",
+   "ini": 4,
+   "dur": 1,
+   "dep": "3.2",
+   "sheet_slack": 6,
+   "sheet_crit": ""
+  },
+  {
+   "cod": "3.4",
+   "comp": "Componente 3",
+   "act": "Desarrollar las ocho sesiones de la escuela de familias.",
+   "entregable": "Listas de asistencia y registros de sesiones",
+   "resp": "Gestor(a) psicosocial",
+   "ini": 5,
+   "dur": 4,
+   "dep": "3.3",
+   "sheet_slack": 1,
+   "sheet_crit": ""
+  },
+  {
+   "cod": "3.5",
+   "comp": "Componente 3",
+   "act": "Realizar un encuentro específico con padres y hombres cuidadores sobre masculinidades no violentas.",
+   "entregable": "Registro del encuentro",
+   "resp": "Gestor(a) psicosocial",
+   "ini": 6,
+   "dur": 1,
+   "dep": "3.2",
+   "sheet_slack": 4,
+   "sheet_crit": ""
+  },
+  {
+   "cod": "3.6",
+   "comp": "Componente 3",
+   "act": "Aplicar la evaluación final y comparar los resultados con la evaluación inicial.",
+   "entregable": "Informe de resultados pre y post",
+   "resp": "Gestor(a) psicosocial",
+   "ini": 9,
+   "dur": 1,
+   "dep": "3.4",
+   "sheet_slack": 1,
+   "sheet_crit": ""
+  },
+  {
+   "cod": "3.7",
+   "comp": "Componente 3",
+   "act": "Presentar los resultados de la escuela de familias a la comunidad educativa.",
+   "entregable": "Acta del encuentro de devolución",
+   "resp": "Coordinación del proyecto",
+   "ini": 9,
+   "dur": 1,
+   "dep": "3.6",
+   "sheet_slack": null,
+   "sheet_crit": ""
+  }
+ ],
+ "items": [
+  {
+   "cod": "1.1",
+   "comp": "Componente 1",
+   "rubro": "Personal",
+   "desc": "Coordinador(a) del proyecto, medio tiempo (gestión transversal)",
+   "unidad": "Persona-mes",
+   "cant": 10,
+   "cu": 680,
+   "total": 6800,
+   "fuente": "Donante",
+   "ini": 1,
+   "fin": 10,
+   "prio": "Esencial",
+   "base": "Salario de referencia COP 2.200.000/mes a medio tiempo (TRM supuesta COP 3.250 por USD)"
+  },
+  {
+   "cod": "1.1",
+   "comp": "Componente 1",
+   "rubro": "Viajes y viáticos",
+   "desc": "Transporte local del equipo entre la sede y la institución educativa",
+   "unidad": "Unidad",
+   "cant": 10,
+   "cu": 77,
+   "total": 770,
+   "fuente": "Donante",
+   "ini": 1,
+   "fin": 10,
+   "prio": "Importante",
+   "base": "COP 250.000/mes estimado para desplazamientos urbanos"
+  },
+  {
+   "cod": "1.2",
+   "comp": "Componente 1",
+   "rubro": "Monitoreo y evaluación",
+   "desc": "Diseño y procesamiento de la línea de base con registros agregados de orientación y SIMAT",
+   "unidad": "Global",
+   "cant": 1,
+   "cu": 500,
+   "total": 500,
+   "fuente": "Donante",
+   "ini": 1,
+   "fin": 2,
+   "prio": "Esencial",
+   "base": "Estimación: honorarios de analista de datos por 2 semanas"
+  },
+  {
+   "cod": "1.3",
+   "comp": "Componente 1",
+   "rubro": "Personal",
+   "desc": "Gestor(a) psicosocial, tiempo completo: diseño participativo del protocolo y formación",
+   "unidad": "Persona-mes",
+   "cant": 2,
+   "cu": 890,
+   "total": 1780,
+   "fuente": "Donante",
+   "ini": 2,
+   "fin": 3,
+   "prio": "Esencial",
+   "base": "Salario de referencia COP 2.900.000/mes"
+  },
+  {
+   "cod": "1.3",
+   "comp": "Componente 1",
+   "rubro": "Equipos y materiales",
+   "desc": "Impresión del protocolo y piezas de apoyo para docentes",
+   "unidad": "Global",
+   "cant": 1,
+   "cu": 150,
+   "total": 150,
+   "fuente": "Donante",
+   "ini": 3,
+   "fin": 4,
+   "prio": "Importante",
+   "base": "Cotización de imprenta local por estimar"
+  },
+  {
+   "cod": "1.4",
+   "comp": "Componente 1",
+   "rubro": "Talleres y eventos",
+   "desc": "Reuniones de validación de rutas con ICBF y Comisaría de Familia (refrigerios y materiales)",
+   "unidad": "Evento",
+   "cant": 2,
+   "cu": 50,
+   "total": 100,
+   "fuente": "Donante",
+   "ini": 3,
+   "fin": 3,
+   "prio": "Importante",
+   "base": "COP 160.000 por reunión"
+  },
+  {
+   "cod": "1.6",
+   "comp": "Componente 1",
+   "rubro": "Talleres y eventos",
+   "desc": "Formación de 30 docentes y orientadores en el protocolo (4 talleres: refrigerios y materiales)",
+   "unidad": "Evento",
+   "cant": 4,
+   "cu": 78,
+   "total": 312,
+   "fuente": "Donante",
+   "ini": 3,
+   "fin": 4,
+   "prio": "Esencial",
+   "base": "COP 1.000.000 en total para 4 talleres"
+  },
+  {
+   "cod": "1.7",
+   "comp": "Componente 1",
+   "rubro": "Comunicación y visibilidad",
+   "desc": "Divulgación del protocolo adoptado a la comunidad educativa",
+   "unidad": "Global",
+   "cant": 1,
+   "cu": 150,
+   "total": 150,
+   "fuente": "Donante",
+   "ini": 4,
+   "fin": 5,
+   "prio": "Deseable",
+   "base": "Estimación de piezas impresas y digitales"
+  },
+  {
+   "cod": "2.1",
+   "comp": "Componente 2",
+   "rubro": "Personal",
+   "desc": "Gestor(a) psicosocial: identificación de barreras de permanencia y comparación de alternativas",
+   "unidad": "Persona-mes",
+   "cant": 1,
+   "cu": 890,
+   "total": 890,
+   "fuente": "Donante",
+   "ini": 1,
+   "fin": 2,
+   "prio": "Esencial",
+   "base": "Salario de referencia COP 2.900.000/mes"
+  },
+  {
+   "cod": "2.3",
+   "comp": "Componente 2",
+   "rubro": "Equipos y materiales",
+   "desc": "Impresión de formatos de consentimiento y asentimiento",
+   "unidad": "Global",
+   "cant": 1,
+   "cu": 50,
+   "total": 50,
+   "fuente": "Donante",
+   "ini": 3,
+   "fin": 3,
+   "prio": "Esencial",
+   "base": "Estimación de 400 copias"
+  },
+  {
+   "cod": "2.4",
+   "comp": "Componente 2",
+   "rubro": "Personal",
+   "desc": "Gestor(a) psicosocial: implementación de la estrategia de apoyo seleccionada",
+   "unidad": "Persona-mes",
+   "cant": 4,
+   "cu": 890,
+   "total": 3560,
+   "fuente": "Donante",
+   "ini": 3,
+   "fin": 9,
+   "prio": "Esencial",
+   "base": "Salario de referencia COP 2.900.000/mes"
+  },
+  {
+   "cod": "2.4",
+   "comp": "Componente 2",
+   "rubro": "Consultorías y servicios",
+   "desc": "Facilitadores de la estrategia de apoyo seleccionada (2 personas; tipo de perfil según el diagnóstico)",
+   "unidad": "Persona-mes",
+   "cant": 14,
+   "cu": 215,
+   "total": 3010,
+   "fuente": "Donante",
+   "ini": 3,
+   "fin": 9,
+   "prio": "Esencial",
+   "base": "COP 700.000 por mes-persona a tiempo parcial"
+  },
+  {
+   "cod": "2.4",
+   "comp": "Componente 2",
+   "rubro": "Equipos y materiales",
+   "desc": "Materiales para la estrategia de apoyo seleccionada",
+   "unidad": "Unidad",
+   "cant": 1,
+   "cu": 1230,
+   "total": 1230,
+   "fuente": "Donante",
+   "ini": 3,
+   "fin": 9,
+   "prio": "Importante",
+   "base": "COP 4.000.000 estimado; se ajusta según la estrategia"
+  },
+  {
+   "cod": "2.4",
+   "comp": "Componente 2",
+   "rubro": "Talleres y eventos",
+   "desc": "Refrigerios para estudiantes en las sesiones (150 estudiantes × 24 sesiones)",
+   "unidad": "Global",
+   "cant": 3600,
+   "cu": 0.9,
+   "total": 3240,
+   "fuente": "Donante",
+   "ini": 3,
+   "fin": 9,
+   "prio": "Importante",
+   "base": "COP 3.000 por refrigerio"
+  },
+  {
+   "cod": "2.6",
+   "comp": "Componente 2",
+   "rubro": "Monitoreo y evaluación",
+   "desc": "Informe de evaluación de la estrategia al cierre del componente",
+   "unidad": "Global",
+   "cant": 1,
+   "cu": 300,
+   "total": 300,
+   "fuente": "Donante",
+   "ini": 9,
+   "fin": 10,
+   "prio": "Importante",
+   "base": "Estimación de procesamiento y edición"
+  },
+  {
+   "cod": "3.1",
+   "comp": "Componente 3",
+   "rubro": "Personal",
+   "desc": "Gestor(a) psicosocial: diseño y desarrollo de la escuela de familias",
+   "unidad": "Persona-mes",
+   "cant": 2,
+   "cu": 890,
+   "total": 1780,
+   "fuente": "Donante",
+   "ini": 2,
+   "fin": 8,
+   "prio": "Esencial",
+   "base": "Salario de referencia COP 2.900.000/mes"
+  },
+  {
+   "cod": "3.2",
+   "comp": "Componente 3",
+   "rubro": "Comunicación y visibilidad",
+   "desc": "Piezas de convocatoria a las familias",
+   "unidad": "Global",
+   "cant": 1,
+   "cu": 60,
+   "total": 60,
+   "fuente": "Donante",
+   "ini": 3,
+   "fin": 3,
+   "prio": "Importante",
+   "base": "Estimación de impresión"
+  },
+  {
+   "cod": "3.3",
+   "comp": "Componente 3",
+   "rubro": "Monitoreo y evaluación",
+   "desc": "Impresión de evaluaciones inicial y final de prácticas de acompañamiento",
+   "unidad": "Global",
+   "cant": 1,
+   "cu": 30,
+   "total": 30,
+   "fuente": "Donante",
+   "ini": 3,
+   "fin": 9,
+   "prio": "Esencial",
+   "base": "Estimación de impresión de 200 formatos"
+  },
+  {
+   "cod": "3.4",
+   "comp": "Componente 3",
+   "rubro": "Talleres y eventos",
+   "desc": "Escuela de familias: refrigerios y materiales (8 sesiones, 100 familias)",
+   "unidad": "Evento",
+   "cant": 8,
+   "cu": 154,
+   "total": 1232,
+   "fuente": "Donante",
+   "ini": 4,
+   "fin": 8,
+   "prio": "Esencial",
+   "base": "COP 4.000.000 en total para 8 sesiones"
+  },
+  {
+   "cod": "3.5",
+   "comp": "Componente 3",
+   "rubro": "Talleres y eventos",
+   "desc": "Encuentro con padres y hombres cuidadores sobre masculinidades no violentas",
+   "unidad": "Global",
+   "cant": 1,
+   "cu": 300,
+   "total": 300,
+   "fuente": "Donante",
+   "ini": 6,
+   "fin": 6,
+   "prio": "Importante",
+   "base": "Estimación de refrigerios y materiales"
+  },
+  {
+   "cod": "3.7",
+   "comp": "Componente 3",
+   "rubro": "Talleres y eventos",
+   "desc": "Encuentro de devolución de resultados a la comunidad educativa",
+   "unidad": "Global",
+   "cant": 1,
+   "cu": 615,
+   "total": 615,
+   "fuente": "Donante",
+   "ini": 10,
+   "fin": 10,
+   "prio": "Deseable",
+   "base": "COP 2.000.000 estimado"
+  },
+  {
+   "cod": "1.1",
+   "comp": "Componente 1",
+   "rubro": "Imprevistos",
+   "desc": "Imprevistos (aprox. 5 % de los costos financiados por el donante)",
+   "unidad": "Global",
+   "cant": 1,
+   "cu": 1200,
+   "total": 1200,
+   "fuente": "Donante",
+   "ini": 1,
+   "fin": 10,
+   "prio": "Importante",
+   "base": "5 % de los costos directos; tope por revisar con el donante"
+  },
+  {
+   "cod": "1.6",
+   "comp": "Componente 1",
+   "rubro": "Personal",
+   "desc": "Tiempo de docentes y orientadores en la formación y la aplicación del protocolo (aporte en especie)",
+   "unidad": "Unidad",
+   "cant": 240,
+   "cu": 18,
+   "total": 4320,
+   "fuente": "Contrapartida",
+   "ini": 3,
+   "fin": 10,
+   "prio": "Esencial",
+   "base": "30 personas × 8 horas × COP 60.000 por hora"
+  },
+  {
+   "cod": "2.4",
+   "comp": "Componente 2",
+   "rubro": "Equipos y materiales",
+   "desc": "Uso de aulas y espacios de la institución (aporte en especie)",
+   "unidad": "Unidad",
+   "cant": 8,
+   "cu": 190,
+   "total": 1520,
+   "fuente": "Contrapartida",
+   "ini": 3,
+   "fin": 10,
+   "prio": "Esencial",
+   "base": "Valor de referencia estimado"
+  },
+  {
+   "cod": "2.5",
+   "comp": "Componente 2",
+   "rubro": "Consultorías y servicios",
+   "desc": "Cupos en formación del SENA para estudiantes de 15 a 17 años (aporte en especie)",
+   "unidad": "Unidad",
+   "cant": 60,
+   "cu": 92,
+   "total": 5520,
+   "fuente": "Contrapartida",
+   "ini": 5,
+   "fin": 9,
+   "prio": "Deseable",
+   "base": "COP 300.000 por cupo estimado; sujeto a confirmación del SENA"
+  },
+  {
+   "cod": "1.1",
+   "comp": "Componente 1",
+   "rubro": "Equipos y materiales",
+   "desc": "Oficina, equipos y tiempo de dirección de la organización ejecutora (aporte en especie)",
+   "unidad": "Global",
+   "cant": 1,
+   "cu": 1850,
+   "total": 1850,
+   "fuente": "Contrapartida",
+   "ini": 1,
+   "fin": 10,
+   "prio": "Importante",
+   "base": "COP 6.000.000 estimado"
+  }
+ ]
+};
+const KEY='monitoreoProyectoV1';
+const $=(s,r=document)=>r.querySelector(s);
+const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const nf=new Intl.NumberFormat('es-CO',{maximumFractionDigits:0});
+const nf1=new Intl.NumberFormat('es-CO',{maximumFractionDigits:1});
+const usd=n=>'USD '+nf.format(Math.round(n));
+const pc=(x,d=0)=>(x*100).toFixed(d).replace('.',',')+'%';
+const clamp=(x,a,b)=>Math.max(a,Math.min(b,x));
+const num=s=>{const m=String(s==null?'':s).match(/(\d+(?:[.,]\d+)?)/);return m?parseFloat(m[1].replace(',','.')):null};
+
+const LV=DATA.levels, ACTS=DATA.acts.map(a=>({...a,fin:a.ini+a.dur-1})), ITEMS=DATA.items.map((it,i)=>({...it,i,total:Math.round(it.cant*it.cu*100)/100}));
+const COMPS=['Componente 1','Componente 2','Componente 3'];
+const END=Math.max(...ACTS.map(a=>a.fin));
+const HOR=Math.max(END,10);
+const RUBROS=[...new Set(ITEMS.map(i=>i.rubro))];
+const TABS=[['resumen','Resumen ejecutivo'],['indicadores','Marco lógico e indicadores'],['cronograma','Cronograma'],['presupuesto','Presupuesto'],['datos','Datos y ajustes']];
+
+/* ---------- Estado ---------- */
+function fresh(){return {v:1,proyecto:'Colegios que protegen',entidad:'',inicio:'2027-01-01',corte:null,indirecto:0,acts:{},ind:{},gastos:[],recorte:20,demo:false}}
+let S=null;
+try{S=JSON.parse(localStorage.getItem(KEY))}catch(e){S=null}
+function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2,6)}
+function applyDemo(s){
+  s.demo=true;s.corte=5;s.acts={};s.gastos=[];s.ind={};
+  const ov={'1.5':60,'2.4':10,'3.4':10,'1.6':80};
+  ACTS.forEach(a=>{const e=clamp((5-a.ini+1)/a.dur,0,1);s.acts[a.cod]={pct:ov[a.cod]!=null?ov[a.cod]:Math.round(e*100)}});
+  ITEMS.forEach(it=>{const n=it.fin-it.ini+1;for(let m=it.ini;m<=Math.min(it.fin,5);m++){s.gastos.push({id:uid(),item:it.i,mes:m,monto:Math.round(it.total/n*(m===5?0.8:0.95)),nota:'Dato de ejemplo'})}});
+  s.ind['Fin']={base:35,meds:[]};
+  s.ind['Propósito']={base:30,meds:[{mes:4,valor:55,nota:'Dato de ejemplo'}]};
+  s.ind['Componente 1']={meds:[{mes:4,valor:0,nota:'Protocolo aún en validación (ejemplo)'}]};
+  s.ind['Componente 2']={meds:[{mes:5,valor:0,nota:'Implementación inicia en el mes 5 (ejemplo)'}]};
+}
+if(!S||!S.v){S=fresh();applyDemo(S)}
+function save(){try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}}
+
+/* ---------- Cálculos ---------- */
+function corteMes(){
+  if(S.corte!=null&&S.corte!=='')return clamp(+S.corte,0,HOR);
+  const st=new Date(S.inicio+'T00:00:00'),now=new Date();
+  if(isNaN(st))return 0;
+  return clamp((now.getFullYear()-st.getFullYear())*12+now.getMonth()-st.getMonth()+1,0,HOR);
+}
+function mesLabel(m){
+  const st=new Date(S.inicio+'T00:00:00');if(isNaN(st))return 'Mes '+m;
+  const d=new Date(st.getFullYear(),st.getMonth()+m-1,1);
+  return d.toLocaleDateString('es-CO',{month:'short',year:'numeric'}).replace('.','');
+}
+(function cpm(){
+  const succ={};ACTS.forEach(a=>{if(a.dep)(succ[a.dep]=succ[a.dep]||[]).push(a.cod)});
+  const LS={};
+  for(let i=ACTS.length-1;i>=0;i--){const a=ACTS[i],ss=succ[a.cod]||[];const lf=ss.length?Math.min(...ss.map(c=>LS[c]))-1:END;LS[a.cod]=lf-a.dur+1;a.slack=LS[a.cod]-a.ini;a.crit=a.slack<=0}
+  const by=Object.fromEntries(ACTS.map(a=>[a.cod,a]));
+  ACTS.forEach(a=>{a.viol=!!(a.dep&&by[a.dep]&&a.ini<by[a.dep].fin+1)});
+})();
+function simulate(cod,d){
+  const ini=Object.fromEntries(ACTS.map(a=>[a.cod,a.ini]));ini[cod]+=d;
+  const by=Object.fromEntries(ACTS.map(a=>[a.cod,a]));
+  const moved=[];
+  ACTS.forEach(a=>{if(a.dep){const need=ini[a.dep]+by[a.dep].dur;if(ini[a.cod]<need&&a.cod!==cod){ini[a.cod]=Math.max(ini[a.cod],need)}}if(ini[a.cod]!==a.ini)moved.push(a.cod)});
+  const end=Math.max(...ACTS.map(a=>ini[a.cod]+a.dur-1));
+  return {end,moved};
+}
+function expAct(a,m){return clamp((m-a.ini+1)/a.dur,0,1)}
+function pctAct(a){return clamp((((S.acts[a.cod]||{}).pct)||0)/100,0,1)}
+function statGap(g){return g<=0.10?'ok':g<=0.30?'warn':'bad'}
+function actStatus(a,m){
+  const p=pctAct(a),e=expAct(a,m);
+  if(p>=1)return {k:'ok',l:'Completada'};
+  if(m<a.ini)return {k:'none',l:'Por iniciar'};
+  if(m>a.fin)return {k:'bad',l:'Atrasada'};
+  const g=e-p;
+  return {k:statGap(g),l:g<=0.10?'En curso':g<=0.30?'Con retraso leve':'Con retraso'};
+}
+function phys(list,m){
+  const W=list.reduce((s,a)=>s+a.dur,0)||1;
+  return {real:list.reduce((s,a)=>s+a.dur*pctAct(a),0)/W,plan:list.reduce((s,a)=>s+a.dur*expAct(a,m),0)/W};
+}
+function planMonthly(){const r=Array(HOR+1).fill(0);ITEMS.forEach(it=>{const n=it.fin-it.ini+1;for(let k=it.ini;k<=it.fin;k++)r[k]+=it.total/n});return r}
+function execMonthly(){const r=Array(HOR+1).fill(0);S.gastos.forEach(g=>{if(g.mes>=1&&g.mes<=HOR)r[g.mes]+=+g.monto||0});return r}
+function execByItem(){const r={};S.gastos.forEach(g=>{r[g.item]=(r[g.item]||0)+(+g.monto||0)});return r}
+const sum=a=>a.reduce((x,y)=>x+y,0);
+const DIRECTO=sum(ITEMS.map(i=>i.total));
+function indInfo(L){
+  const st=S.ind[L.nivel]||{};
+  const fileBase=L.base&&!/establecer/i.test(L.base)?num(L.base):null;
+  const base=(st.base!==undefined&&st.base!==null&&st.base!=='')?+st.base:fileBase;
+  const metaRaw=(st.meta!==undefined&&st.meta!==null&&st.meta!=='')?+st.meta:num(L.meta);
+  const rel=/se reduce/i.test(L.indicador)&&/%/.test(L.meta);
+  const meta=rel?(base!=null?base*(1-metaRaw/100):null):metaRaw;
+  const plazo=num(L.plazo)||HOR;
+  const meds=(st.meds||[]).slice().sort((a,b)=>a.mes-b.mes);
+  const last=meds[meds.length-1]||null;
+  const m=corteMes();
+  const exp=m?clamp(m/plazo,0,1):0;
+  let prog=null,k='none',lab='Sin medición';
+  if(last){
+    if(base==null){k='none';lab='Falta línea de base'}
+    else if(meta===base){k='none';lab='Meta igual a la línea de base'}
+    else{prog=clamp((last.valor-base)/(meta-base),0,1.5);const g=exp-Math.min(prog,1);k=m?statGap(g):'ok';lab=k==='ok'?'En ritmo':k==='warn'?'Rezago leve':'Rezago crítico'}
+  }else if(m>=plazo){k='bad';lab='Plazo vencido sin medición'}
+  return {base,meta,metaRaw,rel,plazo,meds,last,exp,prog,k,lab,fileBase,tent:/tentativa/i.test(L.meta),needBase:fileBase==null};
+}
+function budgetInfo(){
+  const m=corteMes(),pm=planMonthly(),em=execMonthly();
+  const planTo=sum(pm.slice(1,m+1)),execTo=sum(em.slice(1,m+1)),execAll=sum(em.slice(1));
+  const ratio=planTo>0?execTo/planTo:null;
+  let k='none',lab='Sin gasto previsto aún';
+  if(ratio!=null){const d=Math.abs(1-ratio);k=d<=0.10?'ok':d<=0.25?'warn':'bad';lab=ratio<1?'Subejecución':ratio>1?'Sobreejecución':'Al día';if(k==='ok')lab='En línea con lo previsto'}
+  return {m,pm,em,planTo,execTo,execAll,ratio,k,lab};
+}
+function alerts(){
+  const A=[],m=corteMes();
+  const fin=LV.find(l=>l.nivel==='Fin');
+  if(fin&&num(fin.plazo)>END)A.push({s:'warn',t:'El plazo del indicador del Fin supera el cronograma',d:`El indicador del Fin vence en el mes ${num(fin.plazo)} (cierre del año lectivo 2028), pero las actividades terminan en el mes ${END}. Define cómo y quién medirá después de cerrar la ejecución, o ajusta el plazo.`,tab:'indicadores'});
+  const nb=LV.filter(l=>indInfo(l).base==null);
+  if(nb.length)A.push({s:'warn',t:`${nb.length} ${nb.length===1?'indicador sin línea de base':'indicadores sin línea de base'}`,d:`${nb.map(l=>l.nivel).join(' y ')}: la línea de base está "por establecer". Sin ella no se mide el cambio. Regístrala en Marco lógico e indicadores.`,tab:'indicadores'});
+  const tent=LV.filter(l=>/tentativa/i.test(l.meta));
+  if(tent.length)A.push({s:'info',t:`${tent.length} metas tentativas`,d:`Las metas de ${tent.map(l=>l.nivel).join(', ')} se ajustan cuando se cierre la línea de base y la matrícula SIMAT.`,tab:'indicadores'});
+  ACTS.filter(a=>a.viol).forEach(a=>A.push({s:'warn',t:`Dependencia inconsistente en la actividad ${a.cod}`,d:(()=>{const pr=ACTS.find(x=>x.cod===a.dep),need=pr.fin+1,r=simulate(a.cod,need-a.ini);return `La ${a.cod} inicia en el mes ${a.ini} pero depende de la ${a.dep}, que termina en el mes ${pr.fin}. Con dependencia fin-a-inicio debería comenzar en el mes ${need}${r.end>END?', lo que mueve el cierre al mes '+r.end:' (el cierre se mantiene en el mes '+END+')'}. Ajusta la fecha o la dependencia.`})(),tab:'cronograma'}));
+  const sinCosto=ACTS.filter(a=>!ITEMS.some(i=>i.cod===a.cod));
+  if(sinCosto.length)A.push({s:'info',t:`${sinCosto.length} actividades sin costo`,d:`${sinCosto.map(a=>a.cod).join(', ')} no tienen ítems de presupuesto. Confirma si las asume el personal ya presupuestado.`,tab:'presupuesto'});
+  if(!+S.indirecto)A.push({s:'warn',t:'Costos indirectos en 0 %',d:'El presupuesto solo incluye costos directos. Verifica el tope de la convocatoria y registra el porcentaje en Datos y ajustes.',tab:'datos'});
+  const pend=ITEMS.filter(i=>/sujeto a confirmaci/i.test(i.base));
+  if(pend.length)A.push({s:'info',t:'Contrapartida sujeta a confirmación',d:`${usd(sum(pend.map(i=>i.total)))} de la contrapartida (cupos SENA) depende de confirmar el aporte con la entidad.`,tab:'presupuesto'});
+  A.push({s:'info',t:'Hoja de supuestos y riesgos sin diligenciar',d:'La matriz original no tiene supuestos registrados; el marco lógico queda sin la cuarta columna.',tab:'indicadores'});
+  if(m>0){
+    const at=ACTS.filter(a=>actStatus(a,m).k==='bad'&&actStatus(a,m).l!=='Por iniciar');
+    if(at.length)A.push({s:'bad',t:`${at.length} ${at.length===1?'actividad atrasada o con retraso':'actividades atrasadas o con retraso'}`,d:at.map(a=>a.cod).join(', ')+' van por debajo de lo programado al mes '+m+'.',tab:'cronograma'});
+    const bi=budgetInfo();
+    if(bi.k==='bad'||bi.k==='warn')A.push({s:bi.k==='bad'?'bad':'warn',t:'Desviación en la ejecución del presupuesto',d:`Al mes ${m} se previó ${usd(bi.planTo)} y se ha ejecutado ${usd(bi.execTo)} (${pc(bi.ratio)} de lo previsto).`,tab:'presupuesto'});
+    LV.forEach(l=>{const I=indInfo(l);if(I.k==='bad')A.push({s:'bad',t:`Indicador en rojo: ${l.nivel}`,d:I.lab+'.',tab:'indicadores'})});
+    const ex=execByItem();ITEMS.forEach(it=>{if((ex[it.i]||0)>it.total*1.0001)A.push({s:'bad',t:'Gasto por encima de lo presupuestado',d:`${it.cod} · ${it.desc}: ${usd(ex[it.i])} ejecutado vs ${usd(it.total)} presupuestado.`,tab:'presupuesto'})});
+  }
+  const o={bad:0,warn:1,info:2};return A.sort((a,b)=>o[a.s]-o[b.s]);
+}
+
+/* ---------- UI helpers ---------- */
+const ST={ok:['●','En meta'],warn:['▲','Atención'],bad:['■','Crítico'],none:['○','Sin dato'],info:['◆','Info']};
+const chip=(k,label)=>`<span class="chip ${k}"><i aria-hidden="true">${ST[k][0]}</i>${esc(label||ST[k][1])}</span>`;
+const tip=$('#tip');
+function showTip(html,e){tip.innerHTML=html;tip.style.display='block';const w=tip.offsetWidth,h=tip.offsetHeight;let x=e.clientX+14,y=e.clientY+14;if(x+w>innerWidth-8)x=e.clientX-w-14;if(y+h>innerHeight-8)y=e.clientY-h-14;tip.style.left=Math.max(4,x)+'px';tip.style.top=Math.max(4,y)+'px'}
+function hideTip(){tip.style.display='none'}
+document.addEventListener('mousemove',e=>{const t=e.target.closest&&e.target.closest('[data-tip]');if(t)showTip(t.getAttribute('data-tip'),e);else if(!e.target.closest||!e.target.closest('[data-svgtip]'))hideTip()});
+function openModal(html){$('#mbox').innerHTML=html;$('#modal').style.display='grid'}
+function closeModal(){$('#modal').style.display='none'}
+$('#modal').addEventListener('click',e=>{if(e.target.id==='modal')closeModal()});
+document.addEventListener('keydown',e=>{if(e.key==='Escape')closeModal()});
+
+/* ---------- Gráficos SVG ---------- */
+let CPU=0;
+function motionOK(){return !(window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches)}
+function lineChart(el,o){
+  const anim=!!window.__anim&&motionOK(),id='cp'+(++CPU);
+  const W=Math.max(300,el.clientWidth||600),H=o.h||260,mL=54,mR=16,mT=12,mB=30;
+  const xs=o.xmax,ymax=o.ymax,ymin=o.ymin||0;
+  const X=x=>mL+(x-o.xmin)/(xs-o.xmin)*(W-mL-mR),Y=y=>mT+(1-(y-ymin)/(ymax-ymin||1))*(H-mT-mB);
+  let s=`<svg width="${W}" height="${H}" role="img" aria-label="${esc(o.label)}" data-svgtip>`;
+  for(let i=0;i<=5;i++){const v=ymin+(ymax-ymin)*i/5;s+=`<line x1="${mL}" x2="${W-mR}" y1="${Y(v)}" y2="${Y(v)}" stroke="#e1e0d9"/><text x="${mL-8}" y="${Y(v)+4}" text-anchor="end" font-size="11" fill="#52514e">${o.yfmt(v)}</text>`}
+  s+=`<line x1="${mL}" x2="${W-mR}" y1="${Y(ymin)}" y2="${Y(ymin)}" stroke="#c3c2b7"/>`;
+  const step=Math.max(1,Math.ceil((o.xmax-o.xmin)/12));
+  for(let x=o.xmin;x<=o.xmax;x+=step)s+=`<text x="${X(x)}" y="${H-10}" text-anchor="middle" font-size="11" fill="#52514e">${o.xlab?o.xlab(x):x}</text>`;
+  (o.vlines||[]).forEach(v=>{const right=X(v.x)>W-70;s+=`<line x1="${X(v.x)}" x2="${X(v.x)}" y1="${mT}" y2="${H-mB}" stroke="${v.c}" stroke-width="1.5" stroke-dasharray="4 3"/><text x="${X(v.x)+(right?-4:4)}" y="${mT+10}" text-anchor="${right?'end':'start'}" font-size="11" fill="#52514e">${esc(v.t)}</text>`});
+  s+=`<defs><clipPath id="${id}"><rect x="${mL-10}" y="0" height="${H}" width="${anim?0:W}">${anim?`<animate attributeName="width" from="0" to="${W}" dur="1.1s" begin="0.1s" fill="freeze" calcMode="spline" keyTimes="0;1" keySplines="0.22 1 0.36 1"/>`:''}</rect></clipPath></defs><g clip-path="url(#${id})">`;
+  o.series.forEach(se=>{
+    if(se.area&&se.pts.length>1){const f=se.pts[0],l=se.pts[se.pts.length-1];s+=`<polygon fill="${se.c}" fill-opacity=".10" points="${X(f.x)},${Y(ymin)} ${se.pts.map(p=>X(p.x)+','+Y(p.y)).join(' ')} ${X(l.x)},${Y(ymin)}"/>`}
+    if(se.line!==false&&se.pts.length>1)s+=`<polyline fill="none" stroke="${se.c}" stroke-width="2.5" ${se.dash?'stroke-dasharray="6 4"':''} stroke-linejoin="round" stroke-linecap="round" points="${se.pts.map(p=>X(p.x)+','+Y(p.y)).join(' ')}"/>`;
+  });
+  s+='</g>';
+  o.series.forEach((se,k)=>{if(se.dots||se.pts.length===1)se.pts.forEach(p=>{s+=`<circle class="${anim?'dotin':''}" style="${anim?'animation-delay:'+(750+k*80)+'ms':''}" cx="${X(p.x)}" cy="${Y(p.y)}" r="4.5" fill="${se.c}" stroke="#fcfcfb" stroke-width="2"/>`})});
+  o.series.forEach((se,k)=>{s+=`<circle class="hv" data-i="${k}" r="5.5" fill="${se.c}" stroke="#fcfcfb" stroke-width="2" style="display:none;pointer-events:none"/>`});
+  s+=`<line id="ch" y1="${mT}" y2="${H-mB}" stroke="#52514e" stroke-width="1" style="display:none;pointer-events:none"/><rect id="hit" x="${mL}" y="${mT}" width="${W-mL-mR}" height="${H-mT-mB}" fill="transparent"/></svg>`;
+  el.innerHTML=s;
+  const svg=el.firstChild,ch=svg.querySelector('#ch'),hit=svg.querySelector('#hit'),hvs=[...svg.querySelectorAll('.hv')];
+  const allx=[...new Set(o.series.flatMap(se=>se.pts.map(p=>p.x)))].sort((a,b)=>a-b);
+  hit.addEventListener('mousemove',e=>{
+    const r=svg.getBoundingClientRect(),px=e.clientX-r.left;
+    const xv=o.xmin+(px-mL)/(W-mL-mR)*(xs-o.xmin);
+    const nx=allx.reduce((b,x)=>Math.abs(x-xv)<Math.abs(b-xv)?x:b,allx[0]);
+    ch.setAttribute('x1',X(nx));ch.setAttribute('x2',X(nx));ch.style.display='';
+    hvs.forEach(c=>{const se=o.series[+c.dataset.i],p=se.pts.find(p=>p.x===nx);if(p){c.setAttribute('cx',X(p.x));c.setAttribute('cy',Y(p.y));c.style.display=''}else c.style.display='none'});
+    let h=`<b>${esc(o.xtitle?o.xtitle(nx):nx)}</b>`;
+    o.series.forEach(se=>{const p=se.pts.find(p=>p.x===nx);if(p)h+=`<div class="r"><span>${esc(se.name)}</span><span>${o.yfmt(p.y,true)}</span></div>`});
+    showTip(h,e);
+  });
+  hit.addEventListener('mouseleave',()=>{ch.style.display='none';hvs.forEach(c=>c.style.display='none');hideTip()});
+}
+function colChart(el,o){
+  const anim=!!window.__anim&&motionOK();
+  const W=Math.max(300,el.clientWidth||600),H=o.h||240,mL=54,mR=10,mT=10,mB=28;
+  const n=o.labels.length,gw=(W-mL-mR)/n,ymax=o.ymax;
+  const Y=y=>mT+(1-y/ymax)*(H-mT-mB);
+  let s=`<svg width="${W}" height="${H}" role="img" aria-label="${esc(o.label)}">`;
+  for(let i=0;i<=4;i++){const v=ymax*i/4;s+=`<line x1="${mL}" x2="${W-mR}" y1="${Y(v)}" y2="${Y(v)}" stroke="#e1e0d9"/><text x="${mL-8}" y="${Y(v)+4}" text-anchor="end" font-size="11" fill="#52514e">${o.yfmt(v)}</text>`}
+  s+=`<line x1="${mL}" x2="${W-mR}" y1="${Y(0)}" y2="${Y(0)}" stroke="#c3c2b7"/>`;
+  const bw=Math.max(4,Math.min(22,gw/2-4));
+  o.labels.forEach((lb,i)=>{
+    const cx=mL+gw*i+gw/2;
+    const tipHtml=`<b>${esc(o.tipTitle(i))}</b>`+o.series.map(q=>`<div class="r"><span>${esc(q.name)}</span><span>${o.yfmt(q.v[i]||0,true)}</span></div>`).join('');
+    s+=`<g class="hg"><rect class="band" x="${cx-gw/2+2}" y="${mT}" width="${gw-4}" height="${H-mT-mB}" rx="6"/><text x="${cx}" y="${H-9}" text-anchor="middle" font-size="11" fill="#52514e">${esc(lb)}</text>`;
+    o.series.forEach((se,j)=>{
+      const v=se.v[i]||0,x=cx+(j-(o.series.length-1)/2)*(bw+2)-bw/2,y=Y(v),h=Y(0)-y;
+      if(h>0)s+=`<path class="mk" style="${anim?`transform-box:fill-box;transform-origin:center bottom;animation:growy .8s cubic-bezier(.22,1,.36,1) both;animation-delay:${120+i*45+j*70}ms`:''}" d="M${x},${Y(0)} V${y+Math.min(4,h)} Q${x},${y} ${x+Math.min(4,bw/2)},${y} H${x+bw-Math.min(4,bw/2)} Q${x+bw},${y} ${x+bw},${y+Math.min(4,h)} V${Y(0)} Z" fill="${se.c}"/>`;
+    });
+    s+=`<rect x="${cx-gw/2}" y="${mT}" width="${gw}" height="${H-mT-mB}" fill="transparent" data-tip="${esc(tipHtml)}"/></g>`;
+  });
+  s+='</svg>';el.innerHTML=s;
+}
+function pairBars(rows,fmt){
+  const mx=Math.max(1,...rows.flatMap(r=>[r.plan,r.real]));
+  return rows.map(r=>`<div class="pair" data-tip="${esc(`<b>${r.label}</b><div class='r'><span>${r.n1||'Previsto'}</span><span>${fmt(r.plan,true)}</span></div><div class='r'><span>${r.n2||'Real'}</span><span>${fmt(r.real,true)}</span></div>`)}">
+    <div><b>${esc(r.label)}</b>${r.sub?`<div class="mini">${esc(r.sub)}</div>`:''}</div>
+    <div class="bars"><div class="bar t"><b style="width:${r.plan/mx*100}%;background:var(--plan)"></b></div><div class="bar t"><b style="width:${r.real/mx*100}%;background:var(--real)"></b></div></div>
+    <div class="nums">${fmt(r.plan)} prev.<br><b style="color:var(--ink)">${fmt(r.real)} real</b></div></div>`).join('');
+}
+
+/* ---------- Vistas ---------- */
+function renderShell(){
+  const m=corteMes();
+  $('#ttl').textContent=S.proyecto||'Proyecto';
+  $('#sub').textContent=(S.entidad?S.entidad+' · ':'')+`Inicio ${mesLabel(1)} · Cierre previsto ${mesLabel(END)} · ${END} meses`;
+  $('#clock').innerHTML=m===0?`<b>Por iniciar</b><span>Inicia ${mesLabel(1)}</span>`:`<b>Mes ${m} de ${END}</b><span>Corte: ${mesLabel(m)}${S.corte!=null&&S.corte!==''?' (manual)':''}</span>`;
+  const cur=(location.hash||'#resumen').slice(1);
+  $('#tabs').innerHTML=TABS.map(t=>`<a href="#${t[0]}" class="${t[0]===cur?'on':''}">${t[1]}</a>`).join('');
+}
+function demoBanner(){
+  return S.demo?`<div class="banner"><span><b>Datos de ejemplo.</b> El avance, gastos y mediciones que ves son simulados para mostrar cómo funciona. La planificación (indicadores, actividades y presupuesto) sí viene de tu matriz.</span><button class="btn sm" data-act="clear">Empezar con datos reales</button></div>`:'';
+}
+let lastW=0;
+function paint(anim){
+  const h=(location.hash||'#resumen').slice(1);
+  renderShell();window.__redraw=null;window.__anim=!!anim;
+  const f={resumen:vResumen,indicadores:vInd,cronograma:vCrono,presupuesto:vPres,datos:vDatos}[h]||vResumen;
+  $('#main').innerHTML=demoBanner()+f.html();
+  if(f.after)f.after();
+  if(anim&&motionOK())animateIn();
+  window.__anim=false;lastW=$('#main').clientWidth;
+}
+function view(){paint(true);window.scrollTo({top:0})}
+function rerender(opt){const y=window.scrollY;paint(false);if(opt&&opt.rows&&motionOK())stagger($('#main'),'#itemsTbl tr:not(:first-child)',18,18,'rise');window.scrollTo({top:y})}
+function stagger(root,sel,step,cap,cls,base){cls=cls||'rise';base=base||0;root.querySelectorAll(sel).forEach((el,i)=>{el.style.setProperty('--d',(base+Math.min(i,cap)*step)+'ms');el.classList.add(cls)})}
+function countUp(el){
+  const txt=el.textContent,m=txt.match(/(\d{1,3}(?:\.\d{3})+|\d+)(?:,(\d+))?/);if(!m)return;
+  const grouped=m[1].includes('.'),dec=m[2]||'',decs=dec.length,target=parseFloat(m[1].replace(/\./g,'')+(dec?'.'+dec:''));
+  const pre=txt.slice(0,m.index),post=txt.slice(m.index+m[0].length);
+  const fmt=v=>{let t=decs?v.toFixed(decs):String(Math.round(v));let [ip,dp]=t.split('.');if(grouped)ip=ip.replace(/\B(?=(\d{3})+(?!\d))/g,'.');return pre+ip+(dp?','+dp:'')+post};
+  const t0=performance.now(),dur=1000;
+  const step=t=>{const k=Math.min(1,(t-t0)/dur),e=1-Math.pow(1-k,3);el.textContent=k<1?fmt(target*e):txt;if(k<1)requestAnimationFrame(step)};
+  el.textContent=fmt(0);requestAnimationFrame(step);
+}
+function animateIn(){
+  const m=$('#main');
+  stagger(m,'.banner',0,0);
+  stagger(m,'.kpi',70,8);
+  stagger(m,'.card',90,8,'rise',120);
+  stagger(m,'.ind',90,8,'rise',120);
+  stagger(m,'.pair',50,10,'rise',350);
+  stagger(m,'.alert',55,10,'rise',350);
+  stagger(m,'.grow:not(.h)',22,25,'rise',250);
+  stagger(m,'.gb',28,25,'growx',450);
+  stagger(m,'table tr',18,16,'rise',300);
+  stagger(m,'.wipe-t',0,0,'wipe',500);
+  m.querySelectorAll('.bar>b,.gb>b').forEach((b,i)=>{
+    const w=b.style.width;b.style.width='0';b.getBoundingClientRect();
+    b.style.transition='width .95s cubic-bezier(.22,1,.36,1) '+(250+Math.min(i,24)*35)+'ms';
+    requestAnimationFrame(()=>requestAnimationFrame(()=>{b.style.width=w}));
+  });
+  m.querySelectorAll('.kpi .v').forEach(countUp);
+}
+
+/* --- Resumen --- */
+const vResumen={
+  html(){
+    const m=corteMes(),P=phys(ACTS,m),b=budgetInfo(),g=P.plan-P.real;
+    const pk=m?statGap(g):'none';
+    const done=ACTS.filter(a=>pctAct(a)>=1).length,late=ACTS.filter(a=>actStatus(a,m).k==='bad'&&actStatus(a,m).l!=='Por iniciar').length;
+    const meas=LV.filter(l=>indInfo(l).last).length,inds=LV.map(indInfo);
+    const AL=alerts();
+    const nb=AL.filter(a=>a.s==='bad').length,nw=AL.filter(a=>a.s==='warn').length;
+    const comps=COMPS.map(c=>{const l=ACTS.filter(a=>a.comp===c),p=phys(l,m);return {label:c,sub:`${l.length} actividades`,plan:p.plan*100,real:p.real*100}});
+    const proxim=ACTS.filter(a=>pctAct(a)<1&&(a.ini>=m&&a.ini<=m+2||a.fin>=m&&a.fin<=m+2&&a.ini<=m)).slice(0,8);
+    return `
+    <div class="kpis">
+      <div class="kpi"><div class="l">Avance físico</div><div class="v">${pc(P.real)}</div><div class="s">Previsto al mes ${m}: ${pc(P.plan)}</div><div style="margin-top:6px">${chip(pk,m?undefined:'Sin iniciar')}</div></div>
+      <div class="kpi"><div class="l">Ejecución presupuestal</div><div class="v">${pc(b.execAll/DIRECTO,1)}</div><div class="s">${usd(b.execAll)} de ${usd(DIRECTO)}</div><div style="margin-top:6px">${chip(b.k,b.lab)}</div></div>
+      <div class="kpi"><div class="l">Indicadores medidos</div><div class="v">${meas} / ${LV.length}</div><div class="s">${inds.filter(i=>i.k==='ok').length} en ritmo · ${inds.filter(i=>i.k==='bad').length} críticos</div></div>
+      <div class="kpi"><div class="l">Actividades</div><div class="v">${done} / ${ACTS.length}</div><div class="s">completadas · ${late} con retraso</div></div>
+      <div class="kpi"><div class="l">Alertas activas</div><div class="v">${AL.length}</div><div class="s">${nb} críticas · ${nw} de atención</div></div>
+    </div>
+    <div class="grid g2">
+      <div class="card"><h3>Curva de ejecución del presupuesto</h3><div class="hint">Gasto acumulado previsto frente al registrado, en USD. La línea roja marca el mes de corte.</div>
+        <div class="legend"><span class="ln" style="--c:var(--plan)">Previsto acumulado</span><span class="ln" style="--c:var(--real)">Ejecutado acumulado</span></div><div id="cS"></div></div>
+      <div class="card"><h3>Avance físico por componente</h3><div class="hint">Promedio de avance de las actividades, ponderado por duración. Previsto al mes ${m}.</div>
+        <div class="legend"><span style="--c:var(--plan)">Previsto</span><span style="--c:var(--real)">Real</span></div>${pairBars(comps,(v,t)=>pc(v/100,t?1:0))}</div>
+    </div>
+    <div class="grid g2">
+      <div class="card"><h3>Estado de los indicadores</h3><div class="hint">Avance de cada indicador hacia su meta frente al ritmo esperado. <a href="#indicadores">Ver detalle</a></div>
+        ${LV.map((l,i)=>{const I=inds[i];return `<div style="display:grid;grid-template-columns:96px 1fr auto;gap:10px;align-items:center;padding:8px 0;border-bottom:1px solid var(--grid)"><span class="lvl">${esc(l.nivel)}</span><div><div class="ellip" style="max-width:100%;white-space:normal;font-size:12.5px">${esc(l.indicador.length>115?l.indicador.slice(0,115)+'…':l.indicador)}</div><div class="bar" style="margin-top:5px"><b style="width:${I.prog!=null?clamp(I.prog,0,1)*100:0}%;background:var(--real)"></b></div><div class="mini">${I.prog!=null?'Avance a la meta '+pc(Math.min(I.prog,1)):I.lab} · esperado ${pc(I.exp)}</div></div>${chip(I.k,I.lab)}</div>`}).join('')}</div>
+      <div class="card"><h3>Alertas</h3><div class="hint">Calculadas con la matriz y los datos de avance registrados.</div>
+        ${AL.length?AL.slice(0,7).map(a=>`<div class="alert"><span class="sev ${a.s}" aria-hidden="true">${a.s==='bad'?'!':a.s==='warn'?'▲':'i'}</span><div><b>${esc(a.t)} <span class="mini">(${a.s==='bad'?'crítica':a.s==='warn'?'atención':'info'})</span></b><p>${esc(a.d)}</p><a href="#${a.tab}">Ir a ${TABS.find(t=>t[0]===a.tab)[1]}</a></div></div>`).join(''):'<p class="mini">Sin alertas.</p>'}${AL.length>7?`<p class="mini">+ ${AL.length-7} alertas más (menor prioridad).</p>`:''}</div>
+    </div>
+    <div class="card"><h3>Actividades en ventana</h3><div class="hint">Las que inician, terminan o siguen abiertas entre el mes ${Math.max(m,1)} y el ${Math.max(m,1)+2}.</div>
+      <div class="scroll"><table><tr><th>Cód.</th><th>Actividad</th><th>Responsable</th><th class="n">Mes</th><th class="n">Avance</th><th>Estado</th></tr>
+      ${(proxim.length?proxim:ACTS.slice(0,5)).map(a=>{const s=actStatus(a,m);return `<tr><td><span class="code">${a.cod}</span></td><td>${esc(a.act.length>120?a.act.slice(0,120)+'…':a.act)}</td><td>${esc(a.resp)}</td><td class="n">${a.ini}–${a.fin}</td><td class="n">${pc(pctAct(a))}</td><td>${chip(s.k,s.l)}</td></tr>`}).join('')}</table></div></div>`;
+  },
+  after(){
+    const b=budgetInfo();let a=0,c=0;const pl=[{x:0,y:0}],ex=[{x:0,y:0}];
+    for(let k=1;k<=HOR;k++){a+=b.pm[k];pl.push({x:k,y:a});if(k<=b.m){c+=b.em[k];ex.push({x:k,y:c})}}
+    const ymax=Math.ceil(Math.max(DIRECTO,c)/5000)*5000;
+    const draw=()=>lineChart($('#cS'),{label:'Curva S del presupuesto',xmin:0,xmax:HOR,ymax,yfmt:(v,t)=>t?usd(v):(v>=1000?nf.format(v/1000)+' mil':nf.format(v)),xlab:x=>x,xtitle:x=>x===0?'Inicio':`Mes ${x} · ${mesLabel(x)}`,series:[{name:'Previsto acumulado',c:'#86b6ef',pts:pl,area:true},{name:'Ejecutado acumulado',c:'#1c5cab',pts:b.m>0?ex:[],area:true}],vlines:b.m>0?[{x:b.m,c:'#d03b3b',t:'Corte'}]:[]});
+    draw();window.__redraw=draw;
+  }
+};
+
+/* --- Indicadores --- */
+const vInd={
+  html(){
+    const inds=LV.map(indInfo);
+    const matrix=`<div class="card"><h3>Matriz del marco lógico</h3><div class="hint">Vista consolidada tal como está en tu libro. La columna de supuestos queda pendiente porque esa hoja no está diligenciada.</div>
+      <div class="scroll"><table><tr><th>Nivel</th><th>Resumen narrativo</th><th>Indicador</th><th>Medio de verificación</th><th>Supuesto</th></tr>
+      ${LV.map(l=>`<tr><td><span class="lvl">${esc(l.nivel)}</span></td><td>${esc(l.narrativo)}</td><td>${esc(l.indicador)}</td><td>${esc(l.fuente)}</td><td class="mini">(pendiente)</td></tr>`).join('')}
+      <tr><td><span class="lvl">Actividades</span></td><td>${ACTS.length} actividades en 3 componentes</td><td>Presupuesto total: ${usd(DIRECTO*(1+(+S.indirecto||0)/100))}</td><td>Cronograma: ${END} meses</td><td class="mini">(pendiente)</td></tr></table></div></div>`;
+    const cards=LV.map((l,i)=>{
+      const I=inds[i],st=S.ind[l.nivel]||{};
+      return `<div class="ind" id="ind${i}">
+        <div class="head"><span class="lvl">${esc(l.nivel)}</span>${chip(I.k,I.lab)}<span class="chip none" title="Calidad del diseño del indicador según la lista SMART de tu libro"><i>${I.k?'':''}</i>SMART ${l.smart}/6</span><span class="chip none"><i></i>Viabilidad de la fuente ${esc(l.viab)}/3</span>${I.tent?'<span class="tag">Meta tentativa</span>':''}</div>
+        <div style="font-weight:600;margin:6px 0">${esc(l.indicador)}</div>
+        <dl class="meta">
+          <div><dt>Tipo · Unidad</dt><dd>${esc(l.tipo)} · ${esc(l.unidad)}</dd></div>
+          <div><dt>Frecuencia</dt><dd>${esc(l.frecuencia)}</dd></div>
+          <div><dt>Plazo</dt><dd>${esc(l.plazo)}</dd></div>
+          <div><dt>Responsable</dt><dd>${esc(l.resp)}</dd></div>
+          <div style="grid-column:1/-1"><dt>Fórmula</dt><dd>${esc(l.formula)}</dd></div>
+          <div style="grid-column:1/-1"><dt>Fuente</dt><dd>${esc(l.fuente)}</dd></div>
+        </dl>
+        <div class="two">
+          <div>
+            <div class="form" style="margin-bottom:10px">
+              <label class="field">Línea de base (${esc(l.unidad)})<input type="number" step="any" data-ibase="${esc(l.nivel)}" value="${I.base!=null?I.base:''}" placeholder="${l.base.length<30?esc(l.base):'por establecer'}"></label>
+              <label class="field">${I.rel?'Meta: reducción (%)':'Meta ('+esc(l.unidad)+')'}<input type="number" step="any" data-imeta="${esc(l.nivel)}" value="${I.metaRaw!=null?I.metaRaw:''}"></label>
+            </div>
+            ${I.needBase&&I.base==null?'<p class="mini" style="margin:0 0 8px">Línea de base original: '+esc(l.base)+'</p>':''}${I.rel?`<p class="mini" style="margin:0 0 8px">La meta es una reducción relativa frente a la línea de base${I.meta!=null?': equivale a una tasa de '+nf1.format(I.meta)+' '+esc(l.unidad):'; se calcula al registrar la línea de base'}.</p>`:''}
+            <div class="form"><label class="field">Mes<input type="number" min="0" max="36" step="1" style="width:70px" id="m${i}" value="${Math.max(corteMes(),1)}"></label>
+              <label class="field">Valor medido<input type="number" step="any" style="width:100px" id="v${i}"></label>
+              <label class="field" style="flex:1;min-width:120px">Nota<input type="text" id="n${i}" placeholder="Fuente o comentario"></label>
+              <button class="btn sm" data-addmed="${i}">Registrar medición</button></div>
+            ${I.meds.length?`<table style="margin-top:10px"><tr><th>Mes</th><th class="n">Valor</th><th>Nota</th><th></th></tr>${I.meds.map((md,j)=>`<tr><td>${md.mes}</td><td class="n">${nf1.format(md.valor)}</td><td>${esc(md.nota||'')}</td><td><button class="btn ghost sm" data-delmed="${i}:${j}" aria-label="Eliminar medición">Quitar</button></td></tr>`).join('')}</table>`:'<p class="mini" style="margin-top:10px">Aún no hay mediciones registradas.</p>'}
+          </div>
+          <div><div class="legend"><span class="ln" style="--c:#86b6ef">Trayectoria esperada</span><span class="ln" style="--c:#1c5cab">Mediciones</span></div><div id="ic${i}"></div>
+          ${I.prog!=null?`<div class="mini">Avance hacia la meta: <b>${pc(Math.min(I.prog,1))}</b> · esperado al mes ${corteMes()}: ${pc(I.exp)}</div>`:''}</div>
+        </div>
+      </div>`}).join('');
+    return `${matrix}<h2 style="margin:6px 0 10px;font-size:17px">Seguimiento por indicador</h2>${cards}`;
+  },
+  after(){
+    const draw=()=>LV.forEach((l,i)=>{
+      const I=indInfo(l),el=$('#ic'+i);if(!el)return;
+      const xmax=Math.max(I.plazo,corteMes(),...I.meds.map(x=>x.mes),4);
+      const vals=[I.base,I.meta,...I.meds.map(x=>x.valor)].filter(v=>v!=null);
+      const lo=Math.min(0,...vals),hi=Math.max(...vals,1)*1.1;
+      const ser=[];
+      if(I.base!=null&&I.meta!=null)ser.push({name:'Trayectoria esperada',c:'#86b6ef',dash:true,pts:[{x:0,y:I.base},{x:I.plazo,y:I.meta}]});
+      else if(I.meta!=null)ser.push({name:'Meta',c:'#86b6ef',dots:true,line:false,pts:[{x:I.plazo,y:I.meta}]});
+      ser.push({name:'Medición',c:'#1c5cab',dots:true,pts:I.meds.map(x=>({x:x.mes,y:x.valor}))});
+      lineChart(el,{label:'Evolución del indicador '+l.nivel,h:210,xmin:0,xmax:xmax,ymin:lo,ymax:hi,yfmt:(v,t)=>nf1.format(v)+(t?' '+l.unidad:''),xtitle:x=>'Mes '+x,series:ser,vlines:corteMes()>0?[{x:corteMes(),c:'#d03b3b',t:'Corte'}]:[]});
+    });
+    draw();window.__redraw=draw;
+  }
+};
+
+/* --- Cronograma --- */
+const vCrono={
+  html(){
+    const m=corteMes();
+    const cols=Array.from({length:HOR},(_,i)=>i+1);
+    const head=`<div class="grow h"><div>Actividad</div><div>Responsable</div><div style="justify-content:flex-end">% avance</div><div>Estado</div><div>Holgura</div><div class="months" style="--m:${HOR}">${cols.map(c=>`<div class="c ${c===m?'cut':''}" title="${mesLabel(c)}">M${c}</div>`).join('')}</div></div>`;
+    let body='';
+    COMPS.forEach(c=>{
+      const l=ACTS.filter(a=>a.comp===c),p=phys(l,m);
+      body+=`<div class="grow grp"><div style="grid-column:1/5">${esc(c)} · ${l.length} actividades</div><div style="grid-column:5/7;justify-content:flex-start">Avance ${pc(p.real)} · previsto ${pc(p.plan)}</div></div>`;
+      l.forEach(a=>{
+        const s=actStatus(a,m),p=pctAct(a);
+        body+=`<div class="grow"><div title="${esc(a.act)}"><span class="code">${a.cod}</span><span class="ellip">${esc(a.act)}</span></div><div class="mini ellip" title="${esc(a.resp)}">${esc(a.resp)}</div>
+          <div style="justify-content:flex-end"><input class="cell" type="number" min="0" max="100" step="5" value="${Math.round(p*100)}" data-pct="${a.cod}" aria-label="Porcentaje de avance de ${a.cod}"></div>
+          <div>${chip(s.k,s.l)}</div><div>${a.crit?'<b title="Ruta crítica: cualquier retraso mueve el cierre">◆ 0 · Crítica</b>':a.slack+' m'}${a.viol?' <span class="tag" title="La actividad inicia antes de que termine su predecesora">Dep.</span>':''}</div>
+          <div class="months" style="--m:${HOR}">${cols.map(cc=>`<div class="c ${cc===m?'cut':''}"></div>`).join('')}
+            <div class="gb ${a.crit?'crit':''}" style="left:calc(${(a.ini-1)/HOR*100}% + 2px);width:calc(${a.dur/HOR*100}% - 4px)" data-tip="${esc(`<b>${a.cod} · ${a.act}</b><div class='r'><span>Programada</span><span>Mes ${a.ini} a ${a.fin}</span></div><div class='r'><span>Avance</span><span>${pc(p)}</span></div><div class='r'><span>Depende de</span><span>${a.dep||'—'}</span></div><div class='r'><span>Holgura</span><span>${a.slack} mes(es)</span></div>`)}"><b style="width:${p*100}%"></b></div>
+          </div></div>`;
+      });
+    });
+    const opts=ACTS.map(a=>`<option value="${a.cod}">${a.cod} · ${esc(a.act.slice(0,60))}</option>`).join('');
+    const critList=ACTS.filter(a=>a.crit).map(a=>a.cod).join(' → ');
+    return `<div class="kpis">
+      <div class="kpi"><div class="l">Duración</div><div class="v">${END} meses</div><div class="s">${mesLabel(1)} a ${mesLabel(END)}</div></div>
+      <div class="kpi"><div class="l">Actividades críticas</div><div class="v">${ACTS.filter(a=>a.crit).length}</div><div class="s">de ${ACTS.length}, holgura cero</div></div>
+      <div class="kpi"><div class="l">Atrasadas</div><div class="v">${ACTS.filter(a=>actStatus(a,m).k==='bad'&&actStatus(a,m).l!=='Por iniciar').length}</div><div class="s">al mes de corte ${m}</div></div>
+      <div class="kpi"><div class="l">Avance físico</div><div class="v">${pc(phys(ACTS,m).real)}</div><div class="s">previsto ${pc(phys(ACTS,m).plan)}</div></div>
+    </div>
+    <div class="card"><h3>Diagrama de Gantt</h3><div class="hint">La barra clara es lo programado y la oscura lo avanzado. Borde negro = ruta crítica. La columna azul marca el mes de corte. Edita el % de avance directamente en la tabla.</div>
+      <div class="scroll"><div class="gantt">${head}${body}</div></div>
+      <div class="sep"></div><div class="mini"><b>Ruta crítica (red completa de dependencias):</b> ${critList}. La holgura se calcula con todas las dependencias, por eso puede diferir de la hoja Cronograma del libro, cuyos valores guardados no parecen recalculados.</div></div>
+    <div class="card"><h3>Simulador de retraso</h3><div class="hint">¿Qué pasa con el cierre del proyecto si una actividad se retrasa?</div>
+      <div class="form"><label class="field">Actividad<select id="simA" style="max-width:420px">${opts}</select></label><label class="field">Meses de retraso<input type="number" id="simD" min="0" max="12" value="3" style="width:90px"></label></div>
+      <div id="simR" style="margin-top:12px"></div></div>`;
+  },
+  after(){
+    const run=()=>{
+      const cod=$('#simA').value,d=Math.max(0,parseInt($('#simD').value)||0),a=ACTS.find(x=>x.cod===cod);
+      const r=simulate(cod,d),delta=r.end-END;
+      $('#simR').classList.remove('pop');void $('#simR').offsetWidth;$('#simR').classList.add('pop');$('#simR').innerHTML=`<p style="margin:0">${delta<=0?chip('ok','Sin efecto en el cierre'):chip(delta>=3?'bad':'warn','Cierre se mueve '+delta+' mes(es)')} <span style="margin-left:8px">La actividad <b>${a.cod}</b> tiene holgura de ${a.slack} mes(es)${a.crit?' (ruta crítica)':''}. Con ${d} mes(es) de retraso, el proyecto cierra en el mes <b>${r.end}</b> (${mesLabel(r.end)}) en lugar del mes ${END}.</span></p>${r.moved.length>1?`<p class="mini">Se desplazan también: ${r.moved.filter(c=>c!==cod).join(', ')}.</p>`:''}`;
+    };
+    $('#simA').addEventListener('change',run);$('#simD').addEventListener('input',run);run();
+  }
+};
+
+/* --- Presupuesto --- */
+let FLT={comp:'',fuente:'',rubro:'',prio:'',q:''};
+let SORT={k:null,d:1};
+const PR={Esencial:0,Importante:1,Deseable:2};
+const vPres={
+  html(){
+    const b=budgetInfo(),ex=execByItem(),ind=(+S.indirecto||0)/100;
+    const don=sum(ITEMS.filter(i=>i.fuente==='Donante').map(i=>i.total)),cp=sum(ITEMS.filter(i=>i.fuente==='Contrapartida').map(i=>i.total));
+    const donT=don*(1+ind);
+    const rows=ITEMS.filter(i=>(!FLT.comp||i.comp===FLT.comp)&&(!FLT.fuente||i.fuente===FLT.fuente)&&(!FLT.rubro||i.rubro===FLT.rubro)&&(!FLT.prio||i.prio===FLT.prio)&&(!FLT.q||(i.desc+i.cod+i.rubro).toLowerCase().includes(FLT.q.toLowerCase())));
+    const exv=i=>ex[i.i]||0;
+    if(SORT.k){const v={cod:i=>i.cod,rubro:i=>i.rubro,desc:i=>i.desc,fuente:i=>i.fuente,ini:i=>i.ini,prio:i=>PR[i.prio],total:i=>i.total,exec:exv,pct:i=>exv(i)/i.total};const f=v[SORT.k];rows.sort((a,b)=>{const x=f(a),y=f(b);return (typeof x==='string'?x.localeCompare(y,'es',{numeric:true}):x-y)*SORT.d})}
+    const TH=[['cod','Act.'],['rubro','Rubro'],['desc','Descripción'],['fuente','Fuente'],['ini','Meses','n'],['prio','Prioridad'],['total','Previsto','n'],['exec','Ejecutado','n'],['pct','%']];
+    const thead='<tr>'+TH.map(t=>`<th data-sort="${t[0]}" class="${t[2]||''}" aria-sort="${SORT.k===t[0]?(SORT.d>0?'ascending':'descending'):'none'}" title="Ordenar">${t[1]}${SORT.k===t[0]?(SORT.d>0?' ▲':' ▼'):''}</th>`).join('')+'</tr>';
+    const sel=(id,lab,vals)=>`<label class="field">${lab}<select data-flt="${id}"><option value="">Todos</option>${vals.map(v=>`<option ${FLT[id]===v?'selected':''}>${esc(v)}</option>`).join('')}</select></label>`;
+    const D=sum(ITEMS.filter(i=>i.prio==='Deseable').map(i=>i.total)),I2=sum(ITEMS.filter(i=>i.prio==='Importante').map(i=>i.total)),E=sum(ITEMS.filter(i=>i.prio==='Esencial').map(i=>i.total));
+    const gs=S.gastos.slice().sort((a,b)=>b.mes-a.mes).slice(0,12);
+    return `<div class="kpis">
+      <div class="kpi"><div class="l">Presupuesto total</div><div class="v">${usd(DIRECTO+don*ind)}</div><div class="s">Directos ${usd(DIRECTO)}${ind?' + indirectos '+usd(don*ind):''}</div></div>
+      <div class="kpi"><div class="l">Donante</div><div class="v">${pc(donT/(DIRECTO+don*ind))}</div><div class="s">${usd(donT)}</div></div>
+      <div class="kpi"><div class="l">Contrapartida</div><div class="v">${pc(cp/(DIRECTO+don*ind))}</div><div class="s">${usd(cp)} (${pc(cp/DIRECTO)} de los directos)</div></div>
+      <div class="kpi"><div class="l">Ejecutado</div><div class="v">${usd(b.execAll)}</div><div class="s">${pc(b.execAll/DIRECTO,1)} de los directos</div></div>
+      <div class="kpi"><div class="l">Al mes ${b.m}</div><div class="v">${b.ratio!=null?pc(b.ratio):'—'}</div><div class="s">de lo previsto (${usd(b.planTo)})</div><div style="margin-top:6px">${chip(b.k,b.lab)}</div></div>
+    </div>
+    <div class="grid g2">
+      <div class="card"><h3>Flujo mensual</h3><div class="hint">Gasto previsto (reparto parejo entre mes de inicio y fin de cada ítem, como en tu libro) frente al registrado.</div>
+        <div class="legend"><span style="--c:var(--plan)">Previsto</span><span style="--c:var(--real)">Ejecutado</span></div><div id="cM"></div></div>
+      <div class="card"><h3>Por componente y fuente</h3><div class="hint">Directos previstos frente a ejecutados.</div>
+        <div class="legend"><span style="--c:var(--plan)">Previsto</span><span style="--c:var(--real)">Ejecutado</span></div>
+        ${pairBars(COMPS.map(c=>{const l=ITEMS.filter(i=>i.comp===c);return {label:c,plan:sum(l.map(i=>i.total)),real:sum(l.map(i=>ex[i.i]||0))}}),(v)=>usd(v))}
+        <div class="sep"></div><div class="mini" style="margin-bottom:6px">Fuente de financiación (previsto)</div>
+        <div class="wipe-t" style="display:flex;gap:2px;height:22px" aria-label="Donante ${pc(don/DIRECTO)} y contrapartida ${pc(cp/DIRECTO)}"><div style="flex:${don};background:var(--blue);border-radius:6px 0 0 6px" data-tip="${esc(`<b>Donante</b><div class='r'><span>Directos</span><span>${usd(don)}</span></div>`)}"></div><div style="flex:${cp};background:var(--orange);border-radius:0 6px 6px 0" data-tip="${esc(`<b>Contrapartida</b><div class='r'><span>Directos</span><span>${usd(cp)}</span></div>`)}"></div></div>
+        <div class="legend" style="margin-top:6px"><span style="--c:var(--blue)">Donante ${usd(don)} (${pc(don/DIRECTO)})</span><span style="--c:var(--orange)">Contrapartida ${usd(cp)} (${pc(cp/DIRECTO)})</span></div></div>
+    </div>
+    <div class="grid g2">
+      <div class="card"><h3>Por rubro</h3><div class="hint">Directos previstos frente a ejecutados.</div><div class="legend"><span style="--c:var(--plan)">Previsto</span><span style="--c:var(--real)">Ejecutado</span></div>
+        ${pairBars(RUBROS.map(r=>{const l=ITEMS.filter(i=>i.rubro===r);return {label:r,plan:sum(l.map(i=>i.total)),real:sum(l.map(i=>ex[i.i]||0))}}).sort((a,b)=>b.plan-a.plan),(v)=>usd(v))}</div>
+      <div class="card"><h3>Registrar gasto ejecutado</h3><div class="hint">El gasto del mes se asigna a un ítem y alimenta la curva y los semáforos.</div>
+        <div class="form"><label class="field" style="flex:1;min-width:220px">Ítem<select id="gI">${ITEMS.map(i=>`<option value="${i.i}">${i.cod} · ${esc(i.desc.slice(0,55))} (${usd(i.total)})</option>`).join('')}</select></label>
+          <label class="field">Mes<input type="number" id="gM" min="1" max="${HOR}" value="${Math.max(1,b.m)}" style="width:70px"></label>
+          <label class="field">Monto USD<input type="number" id="gV" min="0" step="any" style="width:100px"></label>
+          <button class="btn sm" id="gAdd">Registrar</button></div>
+        ${gs.length?`<div class="scroll" style="max-height:230px;margin-top:10px"><table><tr><th>Mes</th><th>Ítem</th><th class="n">USD</th><th></th></tr>${gs.map(g=>`<tr><td>${g.mes}</td><td>${esc(ITEMS[g.item].cod+' · '+ITEMS[g.item].desc.slice(0,40))}</td><td class="n">${nf.format(g.monto)}</td><td><button class="btn ghost sm" data-delg="${g.id}" aria-label="Eliminar gasto">Quitar</button></td></tr>`).join('')}</table></div><div class="mini">${S.gastos.length} registros en total, se muestran los más recientes.</div>`:'<p class="mini" style="margin-top:10px">Aún no hay gastos registrados.</p>'}</div>
+    </div>
+    <div class="card"><h3>Escenario de recorte</h3><div class="hint">Si el donante recorta el presupuesto, se protege lo Esencial: se recorta primero lo Deseable y luego lo Importante.</div>
+      <div class="form"><label class="field" style="min-width:260px">Recorte: <b id="rcV">${S.recorte}%</b><input type="range" id="rc" min="0" max="50" step="1" value="${S.recorte}"></label></div><div id="rcR" style="margin-top:12px"></div></div>
+    <div class="card"><h3>Detalle por ítems</h3><div class="hint">${rows.length} de ${ITEMS.length} ítems.</div>
+      <div class="form" style="margin-bottom:10px">${sel('comp','Componente',COMPS)}${sel('fuente','Fuente',['Donante','Contrapartida'])}${sel('rubro','Rubro',RUBROS)}${sel('prio','Prioridad',['Esencial','Importante','Deseable'])}<label class="field">Buscar<input type="search" data-flt="q" value="${esc(FLT.q)}" placeholder="Descripción o código"></label></div>
+      <div class="scroll"><table id="itemsTbl">${thead}
+      ${rows.map(i=>{const e=ex[i.i]||0,p=e/i.total;return `<tr><td><span class="code">${i.cod}</span></td><td>${esc(i.rubro)}</td><td>${esc(i.desc)}</td><td>${esc(i.fuente)}</td><td class="n">${i.ini}–${i.fin}</td><td>${esc(i.prio)}</td><td class="n">${nf.format(i.total)}</td><td class="n">${nf.format(e)}</td><td><div class="bar"><b style="width:${clamp(p,0,1)*100}%;background:${p>1?'var(--bad)':'var(--real)'}"></b></div><span class="mini">${pc(p)}</span></td></tr>`}).join('')}
+      <tr><td colspan="6"><b>Total filtrado</b></td><td class="n"><b>${nf.format(sum(rows.map(i=>i.total)))}</b></td><td class="n"><b>${nf.format(sum(rows.map(i=>ex[i.i]||0)))}</b></td><td></td></tr></table></div></div>`;
+  },
+  after(){
+    const b=budgetInfo();
+    const draw=()=>colChart($('#cM'),{label:'Flujo mensual',labels:Array.from({length:HOR},(_,i)=>'M'+(i+1)),ymax:Math.ceil(Math.max(...b.pm,...b.em)/1000)*1000||1000,yfmt:(v,t)=>t?usd(v):nf.format(v),tipTitle:i=>`Mes ${i+1} · ${mesLabel(i+1)}`,series:[{name:'Previsto',c:'#86b6ef',v:b.pm.slice(1)},{name:'Ejecutado',c:'#1c5cab',v:b.em.slice(1)}]});
+    draw();window.__redraw=draw;
+    const rc=()=>{
+      const p=+$('#rc').value;S.recorte=p;save();$('#rcV').textContent=p+'%';
+      const need=DIRECTO*p/100,D=sum(ITEMS.filter(i=>i.prio==='Deseable').map(i=>i.total)),I2=sum(ITEMS.filter(i=>i.prio==='Importante').map(i=>i.total));
+      const cD=Math.min(need,D),cI=Math.min(need-cD,I2),done=cD+cI,short=need-done;
+      const f={Deseable:D?cD/D:0,Importante:I2?cI/I2:0,Esencial:0};
+      const comp=COMPS.map(c=>{const l=ITEMS.filter(i=>i.comp===c),o=sum(l.map(i=>i.total)),n=sum(l.map(i=>i.total*(1-f[i.prio])));return {c,o,n}});
+      $('#rcR').innerHTML=`<p style="margin:0 0 8px">Recorte a lograr: <b>${usd(need)}</b> sobre ${usd(DIRECTO)} de costos directos. ${short>0.5?chip('bad','No alcanza sin tocar lo Esencial'):cI>0.5?chip('warn','Alcanza tocando Importantes'):chip('ok','Alcanza solo con Deseables')}</p>
+        <div class="scroll"><table><tr><th>Prioridad</th><th class="n">Original</th><th class="n">Recortado</th><th class="n">Queda</th></tr>
+        <tr><td>Esencial</td><td class="n">${nf.format(sum(ITEMS.filter(i=>i.prio==='Esencial').map(i=>i.total)))}</td><td class="n">0</td><td class="n">${nf.format(sum(ITEMS.filter(i=>i.prio==='Esencial').map(i=>i.total)))}</td></tr>
+        <tr><td>Importante</td><td class="n">${nf.format(I2)}</td><td class="n">${nf.format(cI)}</td><td class="n">${nf.format(I2-cI)}</td></tr>
+        <tr><td>Deseable</td><td class="n">${nf.format(D)}</td><td class="n">${nf.format(cD)}</td><td class="n">${nf.format(D-cD)}</td></tr></table></div>
+        <div class="scroll" style="margin-top:10px"><table><tr><th>Componente</th><th class="n">Original</th><th class="n">Tras el recorte</th><th class="n">Variación</th></tr>${comp.map(x=>`<tr><td>${x.c}</td><td class="n">${nf.format(x.o)}</td><td class="n">${nf.format(x.n)}</td><td class="n">${pc((x.n-x.o)/x.o,1)}</td></tr>`).join('')}</table></div>
+        <p class="mini">Supuesto: el recorte se reparte proporcionalmente entre los ítems de cada prioridad. ${short>0.5?`Faltan ${usd(short)} por recortar: habría que tocar ítems esenciales.`:''}</p>`;
+    };
+    $('#rc').addEventListener('input',rc);rc();
+  }
+};
+
+/* --- Datos --- */
+const vDatos={
+  html(){
+    const m=corteMes();
+    return `<div class="grid g2">
+    <div class="card"><h3>Proyecto y calendario</h3><div class="hint">El mes actual se calcula con la fecha de inicio, salvo que fijes un mes de corte.</div>
+      <div class="form" style="flex-direction:column;align-items:stretch">
+        <label class="field">Nombre del proyecto<input type="text" data-cfg="proyecto" value="${esc(S.proyecto)}"></label>
+        <label class="field">Organización o donante<input type="text" data-cfg="entidad" value="${esc(S.entidad)}" placeholder="Opcional"></label>
+        <label class="field">Fecha de inicio de la ejecución (Mes 1)<input type="date" data-cfg="inicio" value="${esc(S.inicio)}"></label>
+        <label class="field">Mes de corte<select data-cfg="corte"><option value="">Automático (según la fecha de hoy)${S.corte==null||S.corte===''?' · hoy: Mes '+m:''}</option>${Array.from({length:HOR+1},(_,i)=>`<option value="${i}" ${S.corte!=null&&S.corte!==''&&+S.corte===i?'selected':''}>${i===0?'Antes de iniciar':'Mes '+i+' · '+mesLabel(i)}</option>`).join('')}</select></label>
+        <label class="field">Costos indirectos sobre directos del donante (%)<input type="number" min="0" max="30" step="0.5" data-cfg="indirecto" value="${S.indirecto}"></label>
+      </div></div>
+    <div class="card"><h3>Guardar, compartir y reiniciar</h3><div class="hint">Los datos de avance se guardan en este navegador. Exporta una copia para llevarla a otro equipo o enviarla.</div>
+      <div class="form"><button class="btn" id="bExp">Exportar datos (JSON)</button><button class="btn ghost" id="bImp">Importar datos</button></div>
+      <div class="sep"></div>
+      <div class="form"><button class="btn ghost" id="bDemo">Cargar datos de ejemplo</button><button class="btn danger" id="bClr">Borrar avances y empezar</button></div>
+      <p class="mini" style="margin-top:10px">La planificación (indicadores, actividades, presupuesto y cronograma) viene de tu libro de Excel y no se borra. Si cambias el plan, hay que actualizar el archivo base del dashboard.</p></div>
+    </div>
+    <div class="card"><h3>Qué mide cada semáforo</h3>
+      <table><tr><th>Elemento</th><th>Regla</th></tr>
+      <tr><td>Actividad</td><td>Compara su % de avance con lo que debería llevar al mes de corte (lineal entre su inicio y fin). Hasta 10 puntos de brecha: verde; hasta 30: atención; más: crítico. Pasado su mes final sin completar: atrasada.</td></tr>
+      <tr><td>Indicador</td><td>Avance hacia la meta = (último valor − línea de base) ÷ (meta − línea de base), frente al ritmo esperado (mes de corte ÷ plazo). Mismas brechas que las actividades. Plazo vencido sin medición: crítico.</td></tr>
+      <tr><td>Presupuesto</td><td>Gasto acumulado ejecutado ÷ previsto al mes de corte. Entre 90 % y 110 %: verde; entre 75 % y 125 %: atención; fuera de ese rango: crítico.</td></tr>
+      <tr><td>Ruta crítica</td><td>Actividades con holgura cero según la red completa de dependencias (fin a inicio, un mes de separación).</td></tr></table></div>`;
+  },
+  after(){}
+};
+
+/* ---------- Eventos ---------- */
+document.addEventListener('click',e=>{
+  const th=e.target.closest('th[data-sort]');
+  if(th){const k=th.dataset.sort;if(SORT.k===k)SORT.d=-SORT.d;else{SORT.k=k;SORT.d=1}rerender({rows:true});return}
+  const t=e.target.closest('button');if(!t)return;
+  if(t.dataset.act==='clear'||t.id==='bClr'){
+    if(t.id==='bClr'&&!t.dataset.sure){t.dataset.sure=1;t.textContent='Confirmar: borrar avances';setTimeout(()=>{if(t.isConnected){t.textContent='Borrar avances y empezar';delete t.dataset.sure}},4000);return}
+    const k={proyecto:S.proyecto,entidad:S.entidad,inicio:S.inicio,indirecto:S.indirecto};S=Object.assign(fresh(),k);save();rerender();return}
+  if(t.id==='bDemo'){const k={proyecto:S.proyecto,entidad:S.entidad,inicio:S.inicio,indirecto:S.indirecto};S=Object.assign(fresh(),k);applyDemo(S);save();rerender();return}
+  if(t.id==='bExp'){
+    const txt=JSON.stringify(S,null,1);
+    openModal(`<h3>Exportar datos</h3><p class="mini">Copia este texto y guárdalo en un archivo .json, o intenta descargarlo.</p><textarea id="ta" readonly>${esc(txt)}</textarea><div class="form" style="margin-top:10px"><button class="btn" id="mCopy">Copiar</button><button class="btn ghost" id="mDl">Descargar archivo</button><button class="btn ghost" id="mClose">Cerrar</button></div><p class="mini" id="mMsg"></p>`);return}
+  if(t.id==='bImp'){
+    openModal(`<h3>Importar datos</h3><p class="mini">Pega el JSON exportado o elige el archivo. Reemplaza los avances actuales.</p><textarea id="ta" placeholder="Pega aquí el JSON"></textarea><div class="form" style="margin-top:10px"><input type="file" id="mFile" accept=".json,application/json"><button class="btn" id="mApply">Importar</button><button class="btn ghost" id="mClose">Cancelar</button></div><p class="mini" id="mMsg"></p>`);return}
+  if(t.id==='mClose'){closeModal();return}
+  if(t.id==='mCopy'){const ta=$('#ta');ta.select();let ok=false;try{ok=document.execCommand('copy')}catch(x){}try{navigator.clipboard.writeText(ta.value).then(()=>{$('#mMsg').textContent='Copiado.'},()=>{})}catch(x){}$('#mMsg').textContent=ok?'Copiado.':'Selecciona el texto y copia con Ctrl+C.';return}
+  if(t.id==='mDl'){try{const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([$('#ta').value],{type:'application/json'}));a.download='monitoreo-proyecto.json';document.body.appendChild(a);a.click();a.remove();$('#mMsg').textContent='Si no se descargó, usa Copiar.'}catch(x){$('#mMsg').textContent='Descarga no disponible aquí: usa Copiar.'}return}
+  if(t.id==='mApply'){try{const o=JSON.parse($('#ta').value);if(!o||!o.v||typeof o.acts!=='object')throw 0;S=Object.assign(fresh(),o);save();closeModal();rerender()}catch(x){$('#mMsg').textContent='El texto no es un JSON válido de este dashboard.'}return}
+  if(t.dataset.addmed!=null){const i=+t.dataset.addmed,L=LV[i],v=$('#v'+i).value;if(v==='')return;const st=S.ind[L.nivel]=S.ind[L.nivel]||{};(st.meds=st.meds||[]).push({mes:+$('#m'+i).value||0,valor:+v,nota:$('#n'+i).value});S.demo=S.demo;save();rerender();return}
+  if(t.dataset.delmed){const [i,j]=t.dataset.delmed.split(':').map(Number),L=LV[i],I=indInfo(L);const target=I.meds[j];const st=S.ind[L.nivel];st.meds=st.meds.filter(x=>x!==st.meds.find(y=>y.mes===target.mes&&y.valor===target.valor&&y.nota===target.nota));save();rerender();return}
+  if(t.id==='gAdd'){const v=+$('#gV').value;if(!(v>0))return;S.gastos.push({id:uid(),item:+$('#gI').value,mes:clamp(+$('#gM').value||1,1,HOR),monto:v,nota:''});save();rerender();return}
+  if(t.dataset.delg){S.gastos=S.gastos.filter(g=>g.id!==t.dataset.delg);save();rerender();return}
+});
+document.addEventListener('change',e=>{
+  const t=e.target;
+  if(t.dataset.pct){S.acts[t.dataset.pct]={pct:clamp(+t.value||0,0,100)};save();rerender();return}
+  if(t.dataset.ibase!==undefined){const st=S.ind[t.dataset.ibase]=S.ind[t.dataset.ibase]||{};st.base=t.value===''?null:+t.value;save();rerender();return}
+  if(t.dataset.imeta!==undefined){const st=S.ind[t.dataset.imeta]=S.ind[t.dataset.imeta]||{};st.meta=t.value===''?null:+t.value;save();rerender();return}
+  if(t.dataset.flt){FLT[t.dataset.flt]=t.value;rerender({rows:true});return}
+  if(t.dataset.cfg){const k=t.dataset.cfg;S[k]=(k==='corte')?(t.value===''?null:+t.value):(k==='indirecto'?(+t.value||0):t.value);save();rerender();return}
+  if(t.id==='mFile'&&t.files[0]){const r=new FileReader();r.onload=()=>{$('#ta').value=r.result};r.readAsText(t.files[0])}
+});
+document.addEventListener('input',e=>{const t=e.target;if(t.dataset&&t.dataset.flt==='q'){FLT.q=t.value;const pos=t.selectionStart;rerender();const n=$('[data-flt="q"]');if(n){n.focus();n.setSelectionRange(pos,pos)}}});
+window.addEventListener('hashchange',view);
+let rz;
+if(window.ResizeObserver)new ResizeObserver(()=>{const w=$('#main').clientWidth;if(Math.abs(w-lastW)<3)return;lastW=w;clearTimeout(rz);rz=setTimeout(()=>{if(window.__redraw){window.__anim=false;window.__redraw()}},90)}).observe($('#main'));
+else window.addEventListener('resize',()=>{clearTimeout(rz);rz=setTimeout(()=>{if(window.__redraw)window.__redraw()},120)});
+view();
+</script>
+</body>
+</html>
